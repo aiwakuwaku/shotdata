@@ -4,217 +4,93 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
     <title>Golf Shot Tracer</title>
-    <link rel="manifest" href="manifest.json">
     <style>
         :root {
             --primary: #4caf50;
-            --primary-dark: #2e7d32;
             --bg: #121212;
             --surface: #1e1e1e;
-            --accent: #ffeb3b;
+            --accent: #ffeb3b; /* 視認性の高い黄色 */
             --safe-top: env(safe-area-inset-top);
             --safe-bottom: env(safe-area-inset-bottom);
         }
 
         body {
             font-family: -apple-system, sans-serif;
-            margin: 0;
-            background: var(--bg);
-            color: white;
-            overflow: hidden;
-            height: 100vh;
-            display: flex;
-            flex-direction: column;
+            margin: 0; background: var(--bg); color: white;
+            overflow: hidden; height: 100vh; display: flex; flex-direction: column;
         }
 
-        /* クラブ選択：横スクロール */
-        #club-header {
-            padding-top: calc(var(--safe-top) + 10px);
-            background: #000;
-            border-bottom: 1px solid #333;
-        }
-        .club-scroll {
-            display: flex;
-            overflow-x: auto;
-            padding: 10px;
-            gap: 8px;
-            scroll-behavior: smooth;
-            -webkit-overflow-scrolling: touch;
-        }
+        /* クラブ選択（横スクロール） */
+        #club-header { padding-top: calc(var(--safe-top) + 10px); background: #000; border-bottom: 1px solid #333; }
+        .club-scroll { display: flex; overflow-x: auto; padding: 10px; gap: 8px; -webkit-overflow-scrolling: touch; }
         .club-scroll::-webkit-scrollbar { display: none; }
         .club-btn {
-            flex: 0 0 60px;
-            height: 45px;
-            background: var(--surface);
-            border: 1px solid #444;
-            border-radius: 8px;
-            color: #aaa;
-            font-weight: bold;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            transition: 0.2s;
+            flex: 0 0 60px; height: 45px; background: var(--surface); border: 1px solid #444;
+            border-radius: 8px; color: #aaa; font-weight: bold; display: flex; align-items: center; justify-content: center;
         }
-        .club-btn.active {
-            background: var(--primary);
-            color: white;
-            border-color: var(--accent);
-            transform: scale(1.05);
-        }
+        .club-btn.active { background: var(--primary); color: white; border-color: var(--accent); }
 
         /* メインエリア */
-        #main-container {
-            flex: 1;
-            position: relative;
-            background: linear-gradient(to top, #1b5e20, #0d2e10);
-            overflow: hidden;
-        }
+        #main-container { flex: 1; position: relative; background: linear-gradient(to top, #113813, #051406); overflow: hidden; }
         canvas { width: 100%; height: 100%; touch-action: none; }
 
-        /* HUD（ヘッドアップディスプレイ） */
-        #hud {
-            position: absolute;
-            top: 20px;
-            left: 20px;
-            right: 20px;
-            display: flex;
-            justify-content: space-between;
-            pointer-events: none;
-        }
-        .hud-box {
-            background: rgba(0,0,0,0.6);
-            padding: 8px 12px;
-            border-radius: 12px;
-            backdrop-filter: blur(4px);
-            border: 1px solid rgba(255,255,255,0.1);
-        }
-        .hud-label { font-size: 10px; color: #aaa; text-transform: uppercase; }
-        .hud-value { font-size: 18px; font-weight: bold; color: var(--accent); }
+        /* HUD */
+        #hud { position: absolute; top: 15px; left: 15px; right: 15px; display: flex; justify-content: space-between; pointer-events: none; }
+        .hud-box { background: rgba(0,0,0,0.7); padding: 10px 15px; border-radius: 12px; border: 1px solid rgba(255,255,255,0.2); }
+        .hud-label { font-size: 11px; color: #bbb; margin-bottom: 2px; }
+        .hud-value { font-size: 20px; font-weight: bold; color: var(--accent); }
 
-        /* ショット直後のポップアップ */
+        /* ポップアップ */
         #shot-popup {
-            position: absolute;
-            bottom: 100px;
-            left: 50%;
-            transform: translateX(-50%);
-            background: var(--accent);
-            color: black;
-            padding: 10px 20px;
-            border-radius: 20px;
-            font-weight: bold;
-            opacity: 0;
-            transition: 0.3s;
-            pointer-events: none;
-            box-shadow: 0 4px 15px rgba(0,0,0,0.5);
+            position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%);
+            background: rgba(255, 235, 59, 0.95); color: black; padding: 15px 30px;
+            border-radius: 30px; font-size: 24px; font-weight: 900; opacity: 0;
+            transition: 0.2s; pointer-events: none; box-shadow: 0 10px 30px rgba(0,0,0,0.5);
         }
 
         /* 下部ナビゲーション */
-        nav {
-            padding-bottom: calc(var(--safe-bottom) + 5px);
-            background: #000;
-            display: flex;
-            justify-content: space-around;
-            height: 70px;
-            align-items: center;
-        }
-        .nav-item {
-            display: flex;
-            flex-direction: column;
-            align-items: center;
-            color: #666;
-            text-decoration: none;
-            font-size: 10px;
-            background: none;
-            border: none;
-            flex: 1;
-        }
+        nav { padding-bottom: calc(var(--safe-bottom) + 5px); background: #000; display: flex; height: 75px; align-items: center; }
+        .nav-item { flex: 1; display: flex; flex-direction: column; align-items: center; color: #777; background: none; border: none; font-size: 11px; }
         .nav-item.active { color: var(--primary); }
-        .nav-icon { font-size: 24px; margin-bottom: 4px; }
+        .nav-icon { font-size: 26px; margin-bottom: 4px; }
 
-        /* データ画面のカード改良 */
-        #stats-view {
-            display: none;
-            flex: 1;
-            overflow-y: auto;
-            background: var(--bg);
-            padding: 15px;
-            padding-bottom: 100px;
-        }
-        .club-card {
-            background: var(--surface);
-            border-radius: 16px;
-            padding: 15px;
-            margin-bottom: 15px;
-            box-shadow: 0 4px 6px rgba(0,0,0,0.3);
-        }
-        .card-header {
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            margin-bottom: 12px;
-        }
-        .summary-row {
-            display: grid;
-            grid-template-columns: repeat(4, 1fr);
-            gap: 5px;
-            background: rgba(0,0,0,0.2);
-            padding: 10px;
-            border-radius: 8px;
-        }
-        .summary-cell { text-align: center; }
-        .summary-cell div:first-child { font-size: 9px; color: #888; }
-        .summary-cell div:last-child { font-size: 13px; font-weight: bold; }
+        /* データ画面 */
+        #stats-view { display: none; flex: 1; overflow-y: auto; padding: 20px; padding-bottom: 100px; }
+        .club-card { background: var(--surface); border-radius: 16px; padding: 15px; margin-bottom: 15px; }
     </style>
 </head>
 <body>
 
-    <div id="club-header">
-        <div class="club-scroll" id="club-list"></div>
-    </div>
+    <div id="club-header"><div class="club-scroll" id="club-list"></div></div>
 
     <div id="main-container">
         <canvas id="rangeCanvas"></canvas>
-        
         <div id="hud">
-            <div class="hud-box">
-                <div class="hud-label">Current Club</div>
-                <div class="hud-value" id="hud-club">-</div>
-            </div>
-            <div class="hud-box" style="text-align: right;">
-                <div class="hud-label">Avg Distance</div>
-                <div class="hud-value" id="hud-avg">-</div>
-            </div>
+            <div class="hud-box"><div class="hud-label">CLUB</div><div class="hud-value" id="hud-club">-</div></div>
+            <div class="hud-box" style="text-align:right;"><div class="hud-label">AVG DIST</div><div class="hud-value" id="hud-avg">-</div></div>
         </div>
-
-        <div id="shot-popup">150yd (R5)</div>
+        <div id="shot-popup">-</div>
     </div>
 
     <div id="stats-view">
         <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:20px;">
-            <h2 style="margin:0">Statistics</h2>
-            <button onclick="clearAll()" style="color:#ff5252; background:none; border:1px solid #ff5252; padding:5px 10px; border-radius:5px;">Clear All</button>
+            <h2 style="margin:0">Stats</h2>
+            <button onclick="clearAll()" style="color:#ff5252; background:none; border:1px solid #ff5252; padding:5px 12px; border-radius:8px; font-weight:bold;">Reset</button>
         </div>
         <div id="stats-list"></div>
     </div>
 
     <nav>
-        <button class="nav-item active" onclick="showPage('range')">
-            <span class="nav-icon">🎯</span><span>Record</span>
-        </button>
-        <button class="nav-item" onclick="showPage('stats')">
-            <span class="nav-icon">📊</span><span>Data</span>
-        </button>
-        <button class="nav-item" onclick="undo()">
-            <span class="nav-icon">↩️</span><span>Undo</span>
-        </button>
+        <button class="nav-item active" onclick="showPage('range')"><span class="nav-icon">🎯</span><span>Record</span></button>
+        <button class="nav-item" onclick="showPage('stats')"><span class="nav-icon">📊</span><span>Data</span></button>
+        <button class="nav-item" onclick="undo()"><span class="nav-icon">↩️</span><span>Undo</span></button>
     </nav>
 
     <script>
         const MAX_Y = 300, SIDE_W = 50;
         const clubs = ["1W","3W","3U","4U","5U","5I","6I","7I","8I","9I","PW","52°","58°"];
-        let currentClub = "7I", shots = JSON.parse(localStorage.getItem('golf_v5') || '[]');
+        let currentClub = "7I", shots = JSON.parse(localStorage.getItem('golf_v6') || '[]');
 
-        // 初期化
         const canvas = document.getElementById('rangeCanvas');
         const ctx = canvas.getContext('2d');
         const clubList = document.getElementById('club-list');
@@ -239,21 +115,17 @@
         window.addEventListener('resize', resize);
         setTimeout(resize, 100);
 
-        // ショット記録
         function handleInput(e) {
-            if(document.getElementById('stats-view').style.display === 'flex') return;
+            if(document.getElementById('stats-view').style.display === 'block') return;
             const rect = canvas.getBoundingClientRect();
             const touch = e.touches ? e.touches[0] : e;
             const x = (touch.clientX - rect.left) / canvas.width;
             const y = (touch.clientY - rect.top) / canvas.height;
-
             const dist = Math.round((1 - y) * MAX_Y);
             const side = Math.round((x - 0.5) * (SIDE_W * 2));
-
-            shots.push({ club: currentClub, x, y, dist, side, t: new Date().getTime() });
-            localStorage.setItem('golf_v5', JSON.stringify(shots));
-            
-            showPopup(`${dist}yd (${side >= 0 ? 'R'+side : 'L'+Math.abs(side)})`);
+            shots.push({ club: currentClub, x, y, dist, side, t: Date.now() });
+            localStorage.setItem('golf_v6', JSON.stringify(shots));
+            showPopup(`${dist}yd ${side >= 0 ? 'R'+side : 'L'+Math.abs(side)}`);
             updateUI();
         }
 
@@ -262,35 +134,20 @@
 
         function showPopup(text) {
             const p = document.getElementById('shot-popup');
-            p.innerText = text;
-            p.style.opacity = 1;
-            setTimeout(() => p.style.opacity = 0, 1500);
+            p.innerText = text; p.style.opacity = 1;
+            setTimeout(() => p.style.opacity = 0, 1000);
         }
 
         function showPage(page) {
             const isRange = page === 'range';
-            document.getElementById('range-view')?.style.setProperty('display', isRange ? 'flex' : 'none'); // Logic fix
             document.getElementById('stats-view').style.display = isRange ? 'none' : 'block';
             document.getElementById('main-container').style.display = isRange ? 'block' : 'none';
             document.querySelectorAll('.nav-item').forEach((n, i) => n.classList.toggle('active', (isRange && i===0) || (!isRange && i===1)));
-            if(!isRange) renderStats();
-            else resize();
+            if(!isRange) renderStats(); else resize();
         }
 
-        function undo() {
-            shots.pop();
-            localStorage.setItem('golf_v5', JSON.stringify(shots));
-            updateUI();
-        }
-
-        function clearAll() {
-            if(confirm("データを全て削除しますか？")) {
-                shots = [];
-                localStorage.removeItem('golf_v5');
-                renderStats();
-                updateUI();
-            }
-        }
+        function undo() { shots.pop(); localStorage.setItem('golf_v6', JSON.stringify(shots)); updateUI(); }
+        function clearAll() { if(confirm("全データを削除しますか？")) { shots = []; localStorage.removeItem('golf_v6'); renderStats(); updateUI(); } }
 
         function updateUI() {
             const clubShots = shots.filter(s => s.club === currentClub);
@@ -302,34 +159,57 @@
 
         function draw() {
             ctx.clearRect(0, 0, canvas.width, canvas.height);
-            // ヤード線
-            ctx.textAlign = "left";
-            ctx.font = "12px sans-serif";
-            for(let i=0; i<=MAX_Y; i+=50) {
+            
+            // --- ヤード目盛りの描画改良 ---
+            for(let i=0; i<=MAX_Y; i+=25) {
                 const y = canvas.height - (i/MAX_Y * canvas.height);
-                ctx.strokeStyle = "rgba(255,255,255,0.1)";
-                ctx.beginPath(); ctx.moveTo(0,y); ctx.lineTo(canvas.width,y); ctx.stroke();
-                ctx.fillStyle = "rgba(255,255,255,0.3)";
-                ctx.fillText(i+"y", 10, y-5);
+                const isMain = i % 50 === 0; // 50ydごとの主要な線
+                
+                // 線のスタイル
+                ctx.lineWidth = isMain ? 2 : 1;
+                ctx.strokeStyle = isMain ? "rgba(255,255,255,0.6)" : "rgba(255,255,255,0.2)";
+                
+                ctx.beginPath();
+                ctx.moveTo(0, y);
+                ctx.lineTo(canvas.width, y);
+                ctx.stroke();
+
+                // 数字の表示（50ydごと）
+                if (isMain) {
+                    ctx.fillStyle = i % 100 === 0 ? "#ffeb3b" : "#ffffff"; // 100ydごとは黄色
+                    ctx.font = "bold 16px sans-serif";
+                    ctx.textAlign = "left";
+                    
+                    // 文字の視認性を上げるためのシャドウ
+                    ctx.shadowColor = "black";
+                    ctx.shadowBlur = 4;
+                    ctx.fillText(i + "y", 15, y - 8);
+                    ctx.shadowBlur = 0; // シャドウをリセット
+                }
             }
-            // センターライン
-            ctx.setLineDash([5, 5]);
+
+            // センターライン（ターゲット）
+            ctx.setLineDash([8, 4]);
+            ctx.lineWidth = 2;
+            ctx.strokeStyle = "rgba(255, 235, 59, 0.5)"; // 薄い黄色の点線
             ctx.beginPath(); ctx.moveTo(canvas.width/2, 0); ctx.lineTo(canvas.width/2, canvas.height); ctx.stroke();
             ctx.setLineDash([]);
 
-            // 最近のショットを強調
+            // ショット履歴（最新を強調）
             const clubShots = shots.filter(s => s.club === currentClub);
             clubShots.forEach((s, i) => {
                 const isLast = i === clubShots.length - 1;
-                ctx.fillStyle = isLast ? varColor('--accent') : "rgba(255,255,255,0.5)";
+                ctx.fillStyle = isLast ? "#ffeb3b" : "rgba(255,255,255,0.6)";
                 ctx.beginPath();
-                ctx.arc(s.x * canvas.width, s.y * canvas.height, isLast ? 6 : 4, 0, Math.PI*2);
+                ctx.arc(s.x * canvas.width, s.y * canvas.height, isLast ? 8 : 5, 0, Math.PI*2);
                 ctx.fill();
-                if(isLast) { ctx.strokeStyle="white"; ctx.stroke(); }
+                if(isLast) {
+                    ctx.strokeStyle = "white";
+                    ctx.lineWidth = 2;
+                    ctx.stroke();
+                }
             });
         }
-
-        function varColor(name) { return getComputedStyle(document.documentElement).getPropertyValue(name).trim(); }
 
         function renderStats() {
             const list = document.getElementById('stats-list');
@@ -341,20 +221,16 @@
                 const card = document.createElement('div');
                 card.className = 'club-card';
                 card.innerHTML = `
-                    <div class="card-header"><strong>${c}</strong><span>${s.length} shots</span></div>
-                    <div class="summary-row">
-                        <div class="summary-cell"><div>AVG</div><div>${Math.round(d.reduce((a,b)=>a+b,0)/s.length)}y</div></div>
-                        <div class="summary-cell"><div>MAX</div><div>${Math.max(...d)}y</div></div>
-                        <div class="summary-cell"><div>L-ERR</div><div style="color:#80d8ff">L${Math.abs(Math.min(...sd))}y</div></div>
-                        <div class="summary-cell"><div>R-ERR</div><div style="color:#ff8a80">R${Math.max(...sd)}y</div></div>
+                    <div style="display:flex;justify-content:space-between;margin-bottom:10px;"><strong>${c}</strong><span style="font-size:12px;color:#888;">${s.length} shots</span></div>
+                    <div style="display:grid;grid-template-columns:repeat(4,1fr);gap:5px;text-align:center;background:#111;padding:10px;border-radius:10px;">
+                        <div><div style="font-size:9px;color:#888;">AVG</div><div style="font-weight:bold;">${Math.round(d.reduce((a,b)=>a+b,0)/s.length)}y</div></div>
+                        <div><div style="font-size:9px;color:#888;">MAX</div><div style="font-weight:bold;">${Math.max(...d)}y</div></div>
+                        <div><div style="font-size:9px;color:#888;">L-ERR</div><div style="color:#80d8ff;font-weight:bold;">L${Math.abs(Math.min(...sd))}</div></div>
+                        <div><div style="font-size:9px;color:#888;">R-ERR</div><div style="color:#ff8a80;font-weight:bold;">R${Math.max(...sd)}</div></div>
                     </div>
                 `;
                 list.appendChild(card);
             });
-        }
-
-        if ('serviceWorker' in navigator) {
-            navigator.serviceWorker.register('sw.js');
         }
     </script>
 </body>
