@@ -1,1 +1,3 @@
-self.addEventListener('fetch', function(event) {});
+self.addEventListener('fetch', (event) => {
+    // 最小限のサービスワーカー
+});

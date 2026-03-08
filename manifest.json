@@ -1,11 +1,16 @@
 {
-  "name": "Golf Shot Tracker",
+  "name": "Golf Shot Log Yards",
   "short_name": "GolfLog",
   "start_url": "index.html",
   "display": "standalone",
   "background_color": "#ffffff",
   "theme_color": "#15803d",
   "icons": [
-    { "src": "icon.png", "sizes": "192x192", "type": "image/png" }
+    {
+      "src": "icon.svg",
+      "sizes": "any",
+      "type": "image/svg+xml",
+      "purpose": "any"
+    }
   ]
 }

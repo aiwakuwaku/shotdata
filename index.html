@@ -3,220 +3,199 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>Golf Shot Tracer</title>
+    <title>Golf Shot Log (Yards)</title>
+    
+    <!-- PWA Settings -->
+    <link rel="manifest" href="manifest.json">
+    <meta name="theme-color" content="#15803d">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <link rel="icon" type="image/svg+xml" href="icon.svg">
+    <link rel="apple-touch-icon" href="icon.svg">
+
+    <!-- Tailwind CSS -->
     <script src="https://cdn.tailwindcss.com"></script>
+    
     <style>
+        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;700;900&display=swap');
+        body { font-family: 'Inter', sans-serif; -webkit-tap-highlight-color: transparent; }
         .active-tab { border-bottom: 4px solid #16a34a; color: #16a34a; }
-        .recording-active { background-color: #ef4444 !important; animation: pulse 2s infinite; }
-        @keyframes pulse { 0% { opacity: 1; } 50% { opacity: 0.6; } 100% { opacity: 1; } }
+        .btn-active { background-color: #22c55e !important; transform: scale(0.98); }
+        input[type="number"]::-webkit-inner-spin-button,
+        input[type="number"]::-webkit-outer-spin-button { opacity: 1; height: 40px; } /* 刻みボタンを見やすく */
     </style>
 </head>
-<body class="bg-gray-50 min-h-screen pb-20">
+<body class="bg-gray-100 min-h-screen text-gray-800">
 
-    <!-- ヘッダー兼タブ -->
-    <nav class="bg-white shadow-sm sticky top-0 z-10">
-        <div class="flex text-center font-bold text-gray-500">
-            <button onclick="showPage('record')" id="tab-record" class="flex-1 py-4 active-tab">ショット記録</button>
-            <button onclick="showPage('stats')" id="tab-stats" class="flex-1 py-4">統計・分散分析</button>
+    <nav class="bg-white shadow-sm sticky top-0 z-50">
+        <div class="flex text-center font-bold">
+            <button onclick="showPage('record')" id="tab-record" class="flex-1 py-4 active-tab transition-all">計測入力</button>
+            <button onclick="showPage('stats')" id="tab-stats" class="flex-1 py-4 text-gray-400 transition-all">分析データ</button>
         </div>
     </nav>
 
-    <!-- 1. ショット記録画面 -->
-    <div id="page-record" class="p-4 max-w-md mx-auto">
-        <div class="bg-white p-6 rounded-2xl shadow-sm border border-gray-100">
-            <label class="block text-sm font-bold text-gray-600 mb-2">使用クラブ</label>
-            <select id="club" class="w-full p-4 bg-gray-100 rounded-xl text-xl font-bold mb-6 appearance-none border-none focus:ring-2 focus:ring-green-500">
-                <!-- 指定されたクラブセッティング -->
-                <option value="1W">1W</option>
-                <option value="3W">3W</option>
-                <option value="5W">5W</option>
-                <option value="3U">3U</option>
-                <option value="4U">4U</option>
-                <option value="5U">5U</option>
-                <option value="5I">5I</option>
-                <option value="6I">6I</option>
-                <option value="7I">7I</option>
-                <option value="8I">8I</option>
-                <option value="9I">9I</option>
-                <option value="PW">PW</option>
-                <option value="52°">52°</option>
-                <option value="58°">58°</option>
+    <!-- 1. 記録ページ -->
+    <div id="page-record" class="p-4 max-w-md mx-auto block">
+        <div class="bg-white p-6 rounded-2xl shadow-md mb-6 border border-gray-200">
+            <label class="block text-xs font-bold text-gray-400 uppercase mb-2 tracking-widest">Club Selection</label>
+            <select id="club" class="w-full p-4 bg-gray-50 rounded-xl text-xl font-black mb-6 ring-1 ring-gray-200">
+                <option value="1W">1W</option><option value="3W">3W</option><option value="5W">5W</option>
+                <option value="3U">3U</option><option value="4U">4U</option><option value="5U">5U</option>
+                <option value="5I">5I</option><option value="6I">6I</option><option value="7I">7I</option>
+                <option value="8I">8I</option><option value="9I">9I</option><option value="PW">PW</option>
+                <option value="52°">52°</option><option value="58°">58°</option>
             </select>
 
-            <div class="space-y-4">
-                <button onclick="getLocation('start')" id="btn-start" class="w-full py-5 rounded-xl bg-blue-600 text-white font-bold text-lg shadow-lg active:scale-95 transition-transform">
-                    地点A：ここで打つ
+            <div class="grid grid-cols-1 gap-4">
+                <button onclick="getLocation('start')" id="btn-start" class="w-full py-6 rounded-2xl bg-blue-600 text-white font-black text-lg shadow-lg active:bg-blue-700 transition-all">
+                    打点 A を取得
                 </button>
-                
-                <div class="text-center text-gray-400 font-bold">↓ ボールの場所まで移動 ↓</div>
-
-                <button onclick="getLocation('end')" id="btn-end" class="w-full py-5 rounded-xl bg-blue-600 text-white font-bold text-lg shadow-lg active:scale-95 transition-transform">
-                    地点B：ボールが止まった
+                <button onclick="getLocation('end')" id="btn-end" class="w-full py-6 rounded-2xl bg-blue-600 text-white font-black text-lg shadow-lg active:bg-blue-700 transition-all">
+                    停止点 B を取得
                 </button>
             </div>
 
-            <div class="mt-8 pt-6 border-t border-gray-100">
-                <label class="block text-sm font-bold text-gray-600 mb-2">左右の分散（レーザー実測値）</label>
-                <div class="flex items-center gap-3">
-                    <input type="number" id="lateral-error" placeholder="左は -5、右は 5" class="flex-1 p-4 bg-gray-100 rounded-xl text-lg outline-none">
-                    <span class="font-bold text-gray-500">m</span>
+            <div class="mt-8 pt-6 border-t">
+                <label class="block text-xs font-bold text-gray-400 mb-2 uppercase tracking-widest">Lateral Dispersion (yd)</label>
+                <div class="flex items-center gap-2">
+                    <input type="number" id="lateral-error" step="5" value="0"
+                           class="w-full p-5 bg-gray-50 rounded-2xl text-2xl font-black text-center ring-1 ring-gray-200 focus:ring-green-500 outline-none">
                 </div>
-                <p class="text-xs text-gray-400 mt-2">※ターゲットラインに対して左右に何メートルズレたか入力</p>
+                <p class="text-[10px] text-center text-gray-400 mt-3 font-bold uppercase">※ 5ヤード刻み (左:マイナス / 右:プラス)</p>
             </div>
 
-            <button onclick="saveShot()" class="w-full mt-8 bg-green-600 text-white p-5 rounded-2xl font-bold text-xl shadow-xl active:scale-95 transition-transform">
-                記録を保存
+            <button onclick="saveShot()" class="w-full mt-10 bg-gray-900 text-white p-6 rounded-2xl font-black text-xl shadow-xl active:scale-95 transition-all">
+                SAVE RECORD
             </button>
         </div>
     </div>
 
-    <!-- 2. 統計・分散分析画面 -->
+    <!-- 2. 分析ページ -->
     <div id="page-stats" class="p-4 max-w-md mx-auto hidden">
-        <h2 class="text-lg font-bold mb-4 px-2">クラブ別 平均データ</h2>
-        <div id="stats-container" class="space-y-3">
-            <!-- JSで動的に生成 -->
+        <div class="flex justify-between items-end mb-6 px-1">
+            <h2 class="text-2xl font-black uppercase tracking-tighter italic">Analysis</h2>
+            <span id="shot-count" class="text-xs font-bold bg-green-100 text-green-700 px-3 py-1 rounded-full">0 Shots</span>
         </div>
 
-        <div class="mt-10 p-4">
-            <button onclick="exportCSV()" class="w-full py-3 bg-gray-200 text-gray-700 rounded-lg mb-4 font-bold text-sm">CSVで書き出し</button>
-            <button onclick="clearData()" class="w-full py-3 text-red-400 text-sm font-bold">全データをリセット</button>
+        <div id="stats-container" class="space-y-4"></div>
+
+        <div class="mt-12 space-y-3 px-2">
+            <button onclick="exportCSV()" class="w-full py-4 bg-white text-gray-500 rounded-xl text-sm font-bold border border-gray-200">CSVを書き出す</button>
+            <button onclick="clearData()" class="w-full py-4 text-red-300 text-[10px] font-black uppercase tracking-[0.2em]">Reset Data</button>
         </div>
     </div>
 
     <script>
-        let posA = null;
-        let posB = null;
+        let posA = null, posB = null;
+        const M_TO_YD = 1.09361; // ヤード換算係数
 
-        // 画面切り替え
         function showPage(page) {
-            document.getElementById('page-record').classList.toggle('hidden', page !== 'record');
-            document.getElementById('page-stats').classList.toggle('hidden', page !== 'stats');
+            document.getElementById('page-record').style.display = (page === 'record') ? 'block' : 'none';
+            document.getElementById('page-stats').style.display = (page === 'stats') ? 'block' : 'none';
             document.getElementById('tab-record').classList.toggle('active-tab', page === 'record');
             document.getElementById('tab-stats').classList.toggle('active-tab', page === 'stats');
             if (page === 'stats') displayStats();
         }
 
-        // GPS取得
         function getLocation(type) {
-            const btn = type === 'start' ? document.getElementById('btn-start') : document.getElementById('btn-end');
-            btn.innerText = "取得中...";
-            
+            const btn = (type === 'start') ? document.getElementById('btn-start') : document.getElementById('btn-end');
+            btn.innerText = "GPS受信中...";
             navigator.geolocation.getCurrentPosition((position) => {
                 const coords = { lat: position.coords.latitude, lng: position.coords.longitude };
-                if (type === 'start') {
-                    posA = coords;
-                    btn.innerText = "地点A：取得済み ✓";
-                    btn.classList.add('bg-green-500');
-                } else {
-                    posB = coords;
-                    btn.innerText = "地点B：取得済み ✓";
-                    btn.classList.add('bg-green-500');
-                }
-            }, (err) => {
-                alert("GPSをONにしてください");
-                btn.innerText = "再試行";
-            }, { enableHighAccuracy: true });
+                if (type === 'start') { posA = coords; btn.innerText = "地点A OK"; }
+                else { posB = coords; btn.innerText = "地点B OK"; }
+                btn.classList.add('btn-active');
+            }, (err) => alert("GPSをONにしてください"), { enableHighAccuracy: true });
         }
 
-        // 2点間の距離(m)計算
-        function calculateDistance(p1, p2) {
+        function calculateDistanceYards(p1, p2) {
             const R = 6371000;
             const dLat = (p2.lat - p1.lat) * Math.PI / 180;
             const dLon = (p2.lng - p1.lng) * Math.PI / 180;
-            const a = Math.sin(dLat / 2) ** 2 + Math.cos(p1.lat * Math.PI / 180) * Math.cos(p2.lat * Math.PI / 180) * Math.sin(dLon / 2) ** 2;
-            return R * 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
+            const a = Math.sin(dLat/2)**2 + Math.cos(p1.lat*Math.PI/180)*Math.cos(p2.lat*Math.PI/180)*Math.sin(dLon/2)**2;
+            const meters = R * 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1-a));
+            return meters * M_TO_YD; // ヤードに変換
         }
 
-        // 保存
         function saveShot() {
-            if (!posA || !posB) {
-                alert("AとBの地点を取得してください");
+            if (!posA || !posB) { alert("地点AとBを取得してください"); return; }
+            const shot = {
+                club: document.getElementById('club').value,
+                dist: Math.round(calculateDistanceYards(posA, posB)),
+                lat: parseInt(document.getElementById('lateral-error').value) || 0,
+                ts: new Date().getTime()
+            };
+            const logs = JSON.parse(localStorage.getItem('golf_logs_yd') || '[]');
+            logs.push(shot);
+            localStorage.setItem('golf_logs_yd', JSON.stringify(logs));
+            alert("保存完了！");
+            location.reload();
+        }
+
+        function displayStats() {
+            const logs = JSON.parse(localStorage.getItem('golf_logs_yd') || '[]');
+            const container = document.getElementById('stats-container');
+            document.getElementById('shot-count').innerText = `${logs.length} Shots`;
+
+            if (!logs.length) {
+                container.innerHTML = `<div class="text-center py-20 text-gray-300 font-bold uppercase tracking-widest">No Data</div>`;
                 return;
             }
-            const dist = calculateDistance(posA, posB);
-            const latError = parseFloat(document.getElementById('lateral-error').value) || 0;
-            const club = document.getElementById('club').value;
 
-            const shot = { club, dist, latError, date: new Date().getTime() };
-            const history = JSON.parse(localStorage.getItem('golf_shots') || '[]');
-            history.push(shot);
-            localStorage.setItem('golf_shots', JSON.stringify(history));
-
-            // リセット
-            posA = null; posB = null;
-            document.getElementById('btn-start').innerText = "地点A：ここで打つ";
-            document.getElementById('btn-start').classList.replace('bg-green-500', 'bg-blue-600');
-            document.getElementById('btn-end').innerText = "地点B：ボールが止まった";
-            document.getElementById('btn-end').classList.replace('bg-green-500', 'bg-blue-600');
-            document.getElementById('lateral-error').value = '';
-
-            alert("記録完了！");
-        }
-
-        // 統計表示
-        function displayStats() {
-            const history = JSON.parse(localStorage.getItem('golf_shots') || '[]');
-            const container = document.getElementById('stats-container');
-            
-            const stats = history.reduce((acc, s) => {
-                if (!acc[s.club]) acc[s.club] = { dists: [], lats: [] };
-                acc[s.club].dists.push(s.dist);
-                acc[s.club].lats.push(s.latError);
+            const stats = logs.reduce((acc, s) => {
+                if (!acc[s.club]) acc[s.club] = { d: [], l: [] };
+                acc[s.club].d.push(s.dist);
+                acc[s.club].l.push(s.lat);
                 return acc;
             }, {});
 
-            container.innerHTML = history.length === 0 ? '<p class="text-center text-gray-400 py-10">データがありません</p>' : '';
-
-            // 指定されたクラブ順に表示するための配列
             const clubOrder = ["1W", "3W", "5W", "3U", "4U", "5U", "5I", "6I", "7I", "8I", "9I", "PW", "52°", "58°"];
+            container.innerHTML = '';
 
             clubOrder.forEach(club => {
-                if (!stats[club]) return;
-                const d = stats[club].dists;
-                const l = stats[club].lats;
-                const avgD = (d.reduce((a, b) => a + b, 0) / d.length).toFixed(1);
-                const avgL = (l.reduce((a, b) => a + b, 0) / l.length).toFixed(1);
-                const side = avgL > 0 ? '右' : (avgL < 0 ? '左' : '');
+                const d = stats[club];
+                if (!d) return;
+                const avgD = Math.round(d.d.reduce((a,b)=>a+b,0)/d.d.length);
+                const avgL = (d.l.reduce((a,b)=>a+b,0)/d.l.length).toFixed(1);
+                const lText = avgL > 0 ? `右 ${avgL}yd` : (avgL < 0 ? `左 ${Math.abs(avgL)}yd` : `0yd`);
+                const lColor = avgL > 0 ? 'text-blue-600' : (avgL < 0 ? 'text-red-600' : 'text-gray-400');
 
                 container.innerHTML += `
-                    <div class="bg-white p-4 rounded-xl flex items-center shadow-sm border-l-4 border-green-500">
-                        <div class="w-12 font-black text-xl text-green-700">${club}</div>
-                        <div class="flex-1 grid grid-cols-2 ml-4">
+                    <div class="bg-white p-5 rounded-2xl shadow-sm border-l-8 border-green-600 flex flex-col">
+                        <div class="flex justify-between items-center mb-3">
+                            <span class="text-2xl font-black">${club}</span>
+                            <span class="text-[10px] font-black text-gray-400 bg-gray-100 px-2 py-1 rounded tracking-widest">${d.d.length}打</span>
+                        </div>
+                        <div class="flex justify-between items-end">
                             <div>
-                                <span class="text-xs text-gray-400 block">平均飛距離</span>
-                                <span class="text-lg font-bold">${avgD}m</span>
+                                <span class="text-[10px] text-gray-400 font-bold uppercase block mb-1">Avg Distance</span>
+                                <span class="text-2xl font-black">${avgD}<span class="text-xs ml-1 font-bold">yd</span></span>
                             </div>
-                            <div>
-                                <span class="text-xs text-gray-400 block">平均左右分散</span>
-                                <span class="text-lg font-bold ${avgL > 0 ? 'text-blue-600' : 'text-red-600'}">${side}${Math.abs(avgL)}m</span>
+                            <div class="text-right">
+                                <span class="text-[10px] text-gray-400 font-bold uppercase block mb-1">Lateral Dispersion</span>
+                                <span class="text-xl font-black ${lColor}">${lText}</span>
                             </div>
                         </div>
-                        <div class="text-xs text-gray-300">${d.length}打</div>
                     </div>
                 `;
             });
         }
 
-        function clearData() {
-            if(confirm("全ての記録を消去しますか？")) {
-                localStorage.removeItem('golf_shots');
-                displayStats();
-            }
+        function clearData() { if(confirm("消去しますか？")) { localStorage.clear(); location.reload(); } }
+        
+        function exportCSV() {
+            const logs = JSON.parse(localStorage.getItem('golf_logs_yd') || '[]');
+            if(!logs.length) return;
+            let csv = "Club,Distance(yd),Lateral(yd)\n" + logs.map(s => `${s.club},${s.dist},${s.lat}`).join("\n");
+            const link = document.createElement("a");
+            link.href = URL.createObjectURL(new Blob([csv], {type:"text/csv"}));
+            link.download = "golf_data.csv"; link.click();
         }
 
-        function exportCSV() {
-            const history = JSON.parse(localStorage.getItem('golf_shots') || '[]');
-            if (history.length === 0) return;
-            let csv = "Club,Distance(m),LateralError(m),Date\n";
-            history.forEach(s => {
-                csv += `${s.club},${s.dist},${s.latError},${new Date(s.date).toLocaleString()}\n`;
+        // PWA Service Worker Registration
+        if ('serviceWorker' in navigator) {
+            window.addEventListener('load', () => {
+                navigator.serviceWorker.register('sw.js').then(() => console.log('SW Registered'));
             });
-            const blob = new Blob([csv], { type: 'text/csv' });
-            const url = window.URL.createObjectURL(blob);
-            const a = document.createElement('a');
-            a.setAttribute('href', url);
-            a.setAttribute('download', 'golf_data.csv');
-            a.click();
         }
     </script>
 </body>
