@@ -1,8 +1,12 @@
 <svg width="512" height="512" viewBox="0 0 512 512" xmlns="http://www.w3.org/2000/svg">
-  <circle cx="256" cy="256" r="250" fill="#15803d" />
+  <!-- 背景を明るいグリーン (#22c55e) に変更 -->
+  <circle cx="256" cy="256" r="250" fill="#22c55e" />
+  <!-- ゴルフのピン（白） -->
   <rect x="250" y="120" width="12" height="280" fill="white" />
   <path d="M262 120 L350 165 L262 210 Z" fill="white" />
-  <circle cx="200" cy="180" r="10" fill="white" fill-opacity="0.6" />
-  <circle cx="320" cy="280" r="10" fill="white" fill-opacity="0.6" />
-  <circle cx="180" cy="320" r="10" fill="white" fill-opacity="0.6" />
+  <!-- 散らばるドット（分散の表現） -->
+  <circle cx="200" cy="180" r="10" fill="white" fill-opacity="0.7" />
+  <circle cx="320" cy="280" r="10" fill="white" fill-opacity="0.7" />
+  <circle cx="180" cy="320" r="10" fill="white" fill-opacity="0.7" />
+  <circle cx="380" cy="200" r="10" fill="white" fill-opacity="0.7" />
 </svg>

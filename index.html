@@ -7,7 +7,7 @@
     
     <!-- PWA Settings -->
     <link rel="manifest" href="manifest.json">
-    <meta name="theme-color" content="#15803d">
+    <meta name="theme-color" content="#22c55e">
     <meta name="apple-mobile-web-app-capable" content="yes">
     <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
     <link rel="icon" type="image/svg+xml" href="icon.svg">
@@ -19,9 +19,9 @@
     <style>
         @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;700;900&display=swap');
         body { font-family: 'Inter', sans-serif; -webkit-tap-highlight-color: transparent; }
-        .active-tab { border-bottom: 4px solid #16a34a; color: #16a34a; }
-        .btn-active { background-color: #22c55e !important; box-shadow: 0 4px 12px rgba(34, 197, 94, 0.4); }
-        /* 数値入力の標準矢印を消す（自作ボタンを使うため） */
+        /* 明るいグリーンをアクセントに設定 */
+        .active-tab { border-bottom: 4px solid #22c55e; color: #22c55e; }
+        .btn-active { background-color: #4ade80 !important; box-shadow: 0 4px 12px rgba(74, 222, 128, 0.4); }
         input::-webkit-outer-spin-button, input::-webkit-inner-spin-button { -webkit-appearance: none; margin: 0; }
     </style>
 </head>
@@ -29,15 +29,15 @@
 
     <nav class="bg-white shadow-sm sticky top-0 z-50">
         <div class="flex text-center font-bold">
-            <button onclick="showPage('record')" id="tab-record" class="flex-1 py-4 active-tab">計測入力</button>
-            <button onclick="showPage('stats')" id="tab-stats" class="flex-1 py-4 text-gray-400">分析データ</button>
+            <button onclick="showPage('record')" id="tab-record" class="flex-1 py-4 active-tab transition-all">計測入力</button>
+            <button onclick="showPage('stats')" id="tab-stats" class="flex-1 py-4 text-gray-400 transition-all">分析データ</button>
         </div>
     </nav>
 
     <!-- 1. 記録ページ -->
     <div id="page-record" class="p-4 max-w-md mx-auto block">
         <div class="bg-white p-6 rounded-3xl shadow-md mb-6 border border-gray-100">
-            <label class="block text-[10px] font-black text-gray-400 uppercase mb-2 tracking-widest">Club</label>
+            <label class="block text-[10px] font-black text-gray-400 uppercase mb-2 tracking-widest">Club Selection</label>
             <select id="club" class="w-full p-4 bg-gray-50 rounded-2xl text-xl font-black mb-6 ring-1 ring-gray-200 outline-none">
                 <option value="1W">1W</option><option value="3W">3W</option><option value="5W">5W</option>
                 <option value="3U">3U</option><option value="4U">4U</option><option value="5U">5U</option>
@@ -57,18 +57,16 @@
 
             <div class="mt-8 pt-6 border-t border-gray-100">
                 <label class="block text-[10px] font-black text-gray-400 mb-3 uppercase tracking-widest text-center">Lateral Dispersion (yd)</label>
-                
-                <!-- 5ヤード刻み入力コントローラー -->
                 <div class="flex items-center justify-between gap-4">
                     <button onclick="stepLateral(-5)" class="w-16 h-16 bg-gray-200 rounded-full text-2xl font-black shadow-inner active:bg-gray-300">－</button>
                     <div class="flex-1 text-center">
                         <input type="number" id="lateral-error" value="0" readonly
                                class="w-full bg-transparent text-4xl font-black text-center outline-none">
-                        <span class="text-xs font-bold text-gray-400 uppercase">Yards</span>
+                        <span class="text-xs font-bold text-gray-400 uppercase tracking-widest">Yards</span>
                     </div>
                     <button onclick="stepLateral(5)" class="w-16 h-16 bg-gray-200 rounded-full text-2xl font-black shadow-inner active:bg-gray-300">＋</button>
                 </div>
-                <p class="text-[9px] text-center text-gray-400 mt-4 font-bold uppercase tracking-tighter">左はマイナス / 右はプラス / 5yd刻み</p>
+                <p class="text-[9px] text-center text-gray-400 mt-4 font-bold uppercase tracking-tighter">左:マイナス / 右:プラス / 5yd刻み</p>
             </div>
 
             <button onclick="saveShot()" class="w-full mt-10 bg-gray-900 text-white p-6 rounded-2xl font-black text-xl shadow-2xl active:scale-95 transition-all">
@@ -80,8 +78,8 @@
     <!-- 2. 分析ページ -->
     <div id="page-stats" class="p-4 max-w-md mx-auto hidden">
         <div class="flex justify-between items-end mb-6 px-1">
-            <h2 class="text-2xl font-black uppercase italic">Analysis</h2>
-            <span id="shot-count" class="text-xs font-bold bg-green-100 text-green-700 px-3 py-1 rounded-full">0 Shots</span>
+            <h2 class="text-2xl font-black uppercase italic tracking-tighter">Analysis</h2>
+            <span id="shot-count" class="text-xs font-bold bg-green-100 text-green-600 px-3 py-1 rounded-full border border-green-200">0 Shots</span>
         </div>
 
         <div id="stats-container" class="space-y-4"></div>
@@ -104,7 +102,6 @@
             if (page === 'stats') displayStats();
         }
 
-        // 5ヤード刻みのボタン処理
         function stepLateral(val) {
             const input = document.getElementById('lateral-error');
             let current = parseInt(input.value) || 0;
@@ -113,9 +110,7 @@
 
         function getLocation(type) {
             const btn = (type === 'start') ? document.getElementById('btn-start') : document.getElementById('btn-end');
-            const originalText = btn.innerText;
             btn.innerText = "GPS計測中...";
-            
             navigator.geolocation.getCurrentPosition((position) => {
                 const coords = { lat: position.coords.latitude, lng: position.coords.longitude };
                 if (type === 'start') { posA = coords; btn.innerText = "地点A OK ✓"; }
@@ -129,8 +124,7 @@
             const dLat = (p2.lat - p1.lat) * Math.PI / 180;
             const dLon = (p2.lng - p1.lng) * Math.PI / 180;
             const a = Math.sin(dLat/2)**2 + Math.cos(p1.lat*Math.PI/180)*Math.cos(p2.lat*Math.PI/180)*Math.sin(dLon/2)**2;
-            const meters = R * 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1-a));
-            return meters * M_TO_YD;
+            return (R * 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1-a))) * M_TO_YD;
         }
 
         function saveShot() {
@@ -141,15 +135,15 @@
                 lat: parseInt(document.getElementById('lateral-error').value) || 0,
                 ts: new Date().getTime()
             };
-            const logs = JSON.parse(localStorage.getItem('golf_logs_v3') || '[]');
+            const logs = JSON.parse(localStorage.getItem('golf_logs_v4') || '[]');
             logs.push(shot);
-            localStorage.setItem('golf_logs_v3', JSON.stringify(logs));
+            localStorage.setItem('golf_logs_v4', JSON.stringify(logs));
             alert("保存しました");
             location.reload();
         }
 
         function displayStats() {
-            const logs = JSON.parse(localStorage.getItem('golf_logs_v3') || '[]');
+            const logs = JSON.parse(localStorage.getItem('golf_logs_v4') || '[]');
             const container = document.getElementById('stats-container');
             document.getElementById('shot-count').innerText = `${logs.length} Shots`;
 
@@ -177,7 +171,7 @@
                 const lColor = avgL > 0 ? 'text-blue-600' : (avgL < 0 ? 'text-red-600' : 'text-gray-400');
 
                 container.innerHTML += `
-                    <div class="bg-white p-5 rounded-3xl shadow-sm border-l-[12px] border-green-600">
+                    <div class="bg-white p-5 rounded-3xl shadow-sm border-l-[12px] border-[#22c55e]">
                         <div class="flex justify-between items-center mb-4">
                             <span class="text-3xl font-black">${club}</span>
                             <span class="text-[10px] font-black text-gray-400 bg-gray-50 px-3 py-1 rounded-full border border-gray-100">${d.d.length} SHOTS</span>
@@ -198,22 +192,18 @@
         }
 
         function clearData() { if(confirm("消去しますか？")) { localStorage.clear(); location.reload(); } }
-        
         function exportCSV() {
-            const logs = JSON.parse(localStorage.getItem('golf_logs_v3') || '[]');
+            const logs = JSON.parse(localStorage.getItem('golf_logs_v4') || '[]');
             if(!logs.length) return;
             let csv = "Club,Distance(yd),Lateral(yd)\n" + logs.map(s => `${s.club},${s.dist},${s.lat}`).join("\n");
             const link = document.createElement("a");
             link.href = URL.createObjectURL(new Blob([csv], {type:"text/csv"}));
-            link.download = `golf_data_${new Date().toLocaleDateString()}.csv`; link.click();
+            link.download = `golf_data.csv`; link.click();
         }
 
-        // --- PWA Service Worker ---
         if ('serviceWorker' in navigator) {
             window.addEventListener('load', () => {
-                navigator.serviceWorker.register('sw.js').then(reg => {
-                    console.log('Service Worker Registered');
-                }).catch(err => console.log('SW Registration failed', err));
+                navigator.serviceWorker.register('sw.js').catch(err => console.log('SW failed', err));
             });
         }
     </script>
