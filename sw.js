@@ -1,3 +1,7 @@
+const CACHE_NAME = 'golf-pwa-cache-v1';
+self.addEventListener('install', (event) => {
+  event.waitUntil(caches.open(CACHE_NAME));
+});
 self.addEventListener('fetch', (event) => {
-    // 最小限のサービスワーカー
+  event.respondWith(fetch(event.request).catch(() => caches.match(event.request)));
 });
