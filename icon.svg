@@ -1,12 +1,7 @@
 <svg width="512" height="512" viewBox="0 0 512 512" xmlns="http://www.w3.org/2000/svg">
-  <!-- 背景を円ではなく、四角形の塗りつぶしに変更（スマホがここを円形に切り抜きます） -->
   <rect width="512" height="512" fill="#22c55e" />
-  
-  <!-- 中央のピン（少し大きく調整しました） -->
   <rect x="250" y="110" width="14" height="300" fill="white" />
   <path d="M264 110 L370 165 L264 220 Z" fill="white" />
-  
-  <!-- 分散ドット -->
   <circle cx="180" cy="180" r="12" fill="white" fill-opacity="0.8" />
   <circle cx="340" cy="280" r="12" fill="white" fill-opacity="0.8" />
   <circle cx="160" cy="330" r="12" fill="white" fill-opacity="0.8" />
