@@ -10,9 +10,11 @@
     <meta name="apple-mobile-web-app-capable" content="yes">
     <meta name="apple-mobile-web-app-status-bar-style" content="default">
 
+    <!-- アイコン設定 -->
     <link rel="icon" type="image/svg+xml" href="icon-round.svg">
     <link rel="apple-touch-icon" href="icon.svg">
 
+    <!-- Tailwind CSS -->
     <script src="https://cdn.tailwindcss.com"></script>
     
     <style>
@@ -68,20 +70,20 @@
 
     <!-- フルスクリーン選択モーダル -->
     <div id="selection-modal">
-        <div class="sticky top-0 bg-[#1a1c1e] p-6 border-b border-[#44474e] flex items-center justify-between">
-            <h3 id="modal-title" class="text-xl font-bold">Select Distance</h3>
-            <button onclick="closeModal()" class="text-gray-400 font-bold">CANCEL</button>
+        <div class="sticky top-0 bg-[#1a1c1e] p-6 border-b border-[#44474e] flex items-center justify-between z-10">
+            <h3 id="modal-title" class="text-xl font-bold uppercase tracking-tight">Select Distance</h3>
+            <button onclick="closeModal()" class="text-gray-400 font-bold px-2 py-1">CANCEL</button>
         </div>
-        <div id="modal-list">
-            <!-- JSで生成 -->
+        <div id="modal-list" class="pb-10">
+            <!-- JSで動的にリスト生成 -->
         </div>
     </div>
 
     <!-- メインナビゲーション -->
     <nav class="bg-white shadow-sm sticky top-0 z-50 border-b border-gray-100">
         <div class="flex text-center font-bold">
-            <button onclick="showPage('record')" id="tab-record" class="flex-1 py-4 active-tab">計測入力</button>
-            <button onclick="showPage('stats')" id="tab-stats" class="flex-1 py-4 text-gray-400">分析データ</button>
+            <button onclick="showPage('record')" id="tab-record" class="flex-1 py-4 active-tab transition-all">計測入力</button>
+            <button onclick="showPage('stats')" id="tab-stats" class="flex-1 py-4 text-gray-400 transition-all">分析データ</button>
         </div>
     </nav>
 
@@ -89,7 +91,7 @@
     <div id="page-record" class="p-4 max-w-md mx-auto block">
         <div class="bg-white p-6 rounded-[2rem] shadow-md mb-6 border border-gray-50">
             <label class="block text-[10px] font-black text-gray-400 uppercase mb-2 tracking-widest">Club Selection</label>
-            <select id="club" class="w-full p-4 bg-gray-50 rounded-2xl text-xl font-black mb-6 ring-1 ring-gray-100 outline-none">
+            <select id="club" class="w-full p-4 bg-gray-50 rounded-2xl text-xl font-black mb-6 ring-1 ring-gray-200 outline-none">
                 <option value="1W">1W</option><option value="3W">3W</option><option value="5W">5W</option>
                 <option value="3U">3U</option><option value="4U">4U</option><option value="5U">5U</option>
                 <option value="5I">5I</option><option value="6I">6I</option><option value="7I">7I</option>
@@ -113,7 +115,7 @@
                     </div>
                     <button onclick="openModal('R')" class="flex-1 h-16 bg-blue-50 text-blue-500 rounded-2xl text-2xl font-black border border-blue-100">R</button>
                 </div>
-                <p class="text-[9px] text-center text-gray-400 mt-5 font-bold uppercase">L または R をタップして数値を選択</p>
+                <p class="text-[9px] text-center text-gray-400 mt-5 font-bold uppercase tracking-tight">タップして 3 〜 45 yd を選択</p>
             </div>
 
             <button onclick="saveShot()" class="w-full mt-10 bg-gray-900 text-white p-6 rounded-2xl font-black text-xl shadow-2xl">SAVE RECORD</button>
@@ -124,12 +126,12 @@
     <div id="page-stats" class="p-4 max-w-md mx-auto hidden">
         <div class="flex justify-between items-end mb-6 px-1">
             <h2 class="text-2xl font-black uppercase italic tracking-tighter">Analysis</h2>
-            <span id="shot-count" class="text-xs font-bold bg-green-100 text-[#22c55e] px-3 py-1 rounded-full">0 Shots</span>
+            <span id="shot-count" class="text-xs font-bold bg-green-100 text-[#22c55e] px-3 py-1 rounded-full border border-green-200">0 Shots</span>
         </div>
         <div id="stats-container" class="space-y-4"></div>
         <div class="mt-12 space-y-3 px-2 pb-10">
-            <button onclick="exportCSV()" class="w-full py-4 bg-white text-gray-500 rounded-2xl text-sm font-bold border border-gray-100">CSVファイルを書き出す</button>
-            <button onclick="clearData()" class="w-full py-4 text-red-200 text-[10px] font-black uppercase tracking-[0.3em]">Reset All Data</button>
+            <button onclick="exportCSV()" class="w-full py-4 bg-white text-gray-500 rounded-2xl text-sm font-bold border border-gray-100 shadow-sm">CSVファイルを書き出す</button>
+            <button onclick="clearData()" class="w-full py-4 text-red-200 text-[10px] font-black uppercase tracking-[0.3em]">Reset Data</button>
         </div>
     </div>
 
@@ -158,13 +160,15 @@
             // 0ヤード (Straight)
             addListItem(list, 0, currentVal === 0, side);
 
-            // 3〜30ヤード (3刻み)
-            for (let i = 3; i <= 30; i += 3) {
+            // 3〜45ヤード (3刻み) - ご要望通り上限を45に変更
+            for (let i = 3; i <= 45; i += 3) {
                 const val = side === 'L' ? -i : i;
                 addListItem(list, val, currentVal === val, side);
             }
 
             modal.classList.add('active');
+            // スクロール位置を一番上に戻す
+            modal.scrollTop = 0;
         }
 
         function addListItem(container, value, isSelected, side) {
@@ -207,13 +211,17 @@
         // --- GPS計測とデータ処理 ---
         function getLocation(type) {
             const btn = (type === 'start') ? document.getElementById('btn-start') : document.getElementById('btn-end');
-            btn.innerText = "計測中...";
+            const originalText = btn.innerText;
+            btn.innerText = "測位中...";
             navigator.geolocation.getCurrentPosition((position) => {
                 const coords = { lat: position.coords.latitude, lng: position.coords.longitude };
                 if (type === 'start') { posA = coords; btn.innerText = "打点A OK ✓"; }
                 else { posB = coords; btn.innerText = "停止点B OK ✓"; }
                 btn.classList.add('btn-active');
-            }, (err) => alert("GPSを許可してください"), { enableHighAccuracy: true });
+            }, (err) => {
+                alert("GPSを許可してください");
+                btn.innerText = originalText;
+            }, { enableHighAccuracy: true });
         }
 
         function saveShot() {
@@ -230,15 +238,15 @@
                 lat: parseInt(document.getElementById('lateral-error').value) || 0,
                 ts: new Date().getTime()
             };
-            const logs = JSON.parse(localStorage.getItem('golf_logs_final_v6') || '[]');
+            const logs = JSON.parse(localStorage.getItem('golf_logs_v7_45yd') || '[]');
             logs.push(shot);
-            localStorage.setItem('golf_logs_final_v6', JSON.stringify(logs));
+            localStorage.setItem('golf_logs_v7_45yd', JSON.stringify(logs));
             alert("保存しました");
             location.reload();
         }
 
         function displayStats() {
-            const logs = JSON.parse(localStorage.getItem('golf_logs_final_v6') || '[]');
+            const logs = JSON.parse(localStorage.getItem('golf_logs_v7_45yd') || '[]');
             const container = document.getElementById('stats-container');
             document.getElementById('shot-count').innerText = `${logs.length} Shots`;
             if (!logs.length) { container.innerHTML = `<div class="text-center py-20 text-gray-300 font-bold uppercase tracking-widest">No Data</div>`; return; }
@@ -271,7 +279,7 @@
                                 <span class="text-3xl font-black">${avgD}<span class="text-xs ml-1 font-bold italic text-gray-400">yd</span></span>
                             </div>
                             <div class="text-right">
-                                <span class="text-[9px] text-gray-400 font-black uppercase block mb-1 tracking-tighter">Dispersion</span>
+                                <span class="text-[9px] text-gray-400 font-black uppercase block mb-1">Dispersion</span>
                                 <span class="text-xl font-black ${avgL > 0 ? 'text-blue-600' : (avgL < 0 ? 'text-red-600' : 'text-gray-400')}">${lText}</span>
                             </div>
                         </div>
@@ -281,15 +289,17 @@
 
         function clearData() { if(confirm("消去しますか？")) { localStorage.clear(); location.reload(); } }
         function exportCSV() {
-            const logs = JSON.parse(localStorage.getItem('golf_logs_final_v6') || '[]');
+            const logs = JSON.parse(localStorage.getItem('golf_logs_v7_45yd') || '[]');
             if(!logs.length) return;
             let csv = "\uFEFFClub,Distance(yd),Lateral(yd)\n" + logs.map(s => `${s.club},${s.dist},${s.lat}`).join("\n");
             const link = document.createElement("a");
             link.href = URL.createObjectURL(new Blob([csv], {type:"text/csv;charset=utf-8"}));
-            link.download = "golf_data.csv"; link.click();
+            link.download = `golf_data_${new Date().toISOString().slice(0,10)}.csv`; link.click();
         }
 
-        if ('serviceWorker' in navigator) { window.addEventListener('load', () => { navigator.serviceWorker.register('sw.js'); }); }
+        if ('serviceWorker' in navigator) { 
+            window.addEventListener('load', () => { navigator.serviceWorker.register('sw.js'); }); 
+        }
     </script>
 </body>
 </html>
