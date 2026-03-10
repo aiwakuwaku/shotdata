@@ -1,38 +1,24 @@
-const CACHE_NAME = 'golf-log-v2';
-const ASSETS_TO_CACHE = [
-  './',                  // インデックス
+const CACHE_NAME = 'golf-offline-v1';
+const ASSETS = [
+  './',
   './index.html',
   './manifest.json',
   './icon.svg',
-  './icon-round.svg',
-  'https://cdn.tailwindcss.com'
+  './icon-round.svg'
 ];
 
-// インストール：全ファイルを保存
-self.addEventListener('install', (event) => {
-  event.waitUntil(
-    caches.open(CACHE_NAME).then((cache) => {
-      return cache.addAll(ASSETS_TO_CACHE);
-    }).then(() => self.skipWaiting())
-  );
+self.addEventListener('install', (e) => {
+  e.waitUntil(caches.open(CACHE_NAME).then((cache) => cache.addAll(ASSETS)));
+  self.skipWaiting();
 });
 
-// 有効化：古いキャッシュを掃除
-self.addEventListener('activate', (event) => {
-  event.waitUntil(
-    caches.keys().then((keys) => {
-      return Promise.all(
-        keys.filter(key => key !== CACHE_NAME).map(key => caches.delete(key))
-      );
-    }).then(() => self.clients.claim())
-  );
+self.addEventListener('activate', (e) => {
+  e.waitUntil(caches.keys().then((keys) => Promise.all(
+    keys.map((k) => { if (k !== CACHE_NAME) return caches.delete(k); })
+  )));
+  self.clients.claim();
 });
 
-// 取得：通信よりキャッシュを最優先（オフライン起動の核）
-self.addEventListener('fetch', (event) => {
-  event.respondWith(
-    caches.match(event.request).then((cachedResponse) => {
-      return cachedResponse || fetch(event.request);
-    })
-  );
+self.addEventListener('fetch', (e) => {
+  e.respondWith(caches.match(e.request).then((res) => res || fetch(e.request)));
 });

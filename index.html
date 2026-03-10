@@ -5,272 +5,244 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
     <title>GolfLog</title>
     
-    <!-- PWA Settings -->
+    <!-- PWA設定 -->
     <link rel="manifest" href="manifest.json">
     <meta name="theme-color" content="#22c55e">
     <meta name="apple-mobile-web-app-capable" content="yes">
     <meta name="apple-mobile-web-app-status-bar-style" content="default">
-    <meta name="apple-mobile-web-app-title" content="GolfLog">
-
-    <!-- アイコン設定 -->
     <link rel="icon" type="image/svg+xml" href="icon-round.svg">
     <link rel="apple-touch-icon" href="icon.svg">
 
-    <!-- Tailwind CSS (Offline Cacheable via SW) -->
-    <script src="https://cdn.tailwindcss.com"></script>
-    
     <style>
-        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;700;900&display=swap');
-        body { font-family: 'Inter', sans-serif; -webkit-tap-highlight-color: transparent; }
-        .active-tab { border-bottom: 4px solid #22c55e; color: #22c55e; }
-        .btn-active { background-color: #4ade80 !important; }
-        input::-webkit-outer-spin-button, input::-webkit-inner-spin-button { -webkit-appearance: none; margin: 0; }
+        /* 外部CSSを使わず、ここで全てのデザインを完結させます */
+        :root { --primary: #22c55e; --bg: #f3f4f6; --dark: #111827; }
+        * { box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
+        body { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif; margin: 0; background: var(--bg); color: #374151; line-height: 1.5; }
         
-        /* ダークテーマ セレクター画面 */
-        #selection-modal {
-            display: none;
-            position: fixed;
-            inset: 0;
-            background-color: #1a1c1e;
-            color: #e2e2e6;
-            z-index: 9999;
-            overflow-y: auto;
-        }
-        #selection-modal.active { display: block; }
-        .selector-item {
-            padding: 1.25rem 1.5rem;
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            border-bottom: 1px solid #44474e;
-            cursor: pointer;
-        }
-        .selector-item:active { background-color: #44474e; }
-        .radio-circle {
-            width: 24px; height: 24px;
-            border: 2px solid #c4c6cf;
-            border-radius: 50%;
-            display: flex; align-items: center; justify-content: center;
-        }
-        .radio-circle.selected { border-color: #a8c7ff; }
-        .radio-dot {
-            width: 12px; height: 12px;
-            background-color: #a8c7ff;
-            border-radius: 50%;
-            display: none;
-        }
-        .selected .radio-dot { display: block; }
+        /* ナビゲーション */
+        nav { background: white; display: flex; position: sticky; top: 0; z-index: 100; border-bottom: 1px solid #e5e7eb; }
+        nav button { flex: 1; padding: 16px; border: none; background: none; font-size: 16px; font-weight: bold; color: #9ca3af; cursor: pointer; border-bottom: 3px solid transparent; transition: 0.2s; }
+        nav button.active { color: var(--primary); border-bottom-color: var(--primary); }
+
+        .container { max-width: 480px; margin: 0 auto; padding: 16px; }
+        .card { background: white; padding: 24px; border-radius: 32px; shadow: 0 4px 6px -1px rgba(0,0,0,0.1); border: 1px solid #f3f4f6; margin-bottom: 16px; box-shadow: 0 10px 15px -3px rgba(0,0,0,0.05); }
+        
+        /* 入力要素 */
+        .label-tiny { font-size: 10px; font-weight: 900; color: #9ca3af; text-transform: uppercase; letter-spacing: 0.1em; margin-bottom: 8px; display: block; }
+        select { width: 100%; padding: 14px; border-radius: 16px; border: 1px solid #e5e7eb; background: #f9fafb; font-size: 18px; font-weight: 800; margin-bottom: 24px; appearance: none; }
+        
+        .btn-gps { width: 100%; padding: 20px; border-radius: 20px; border: none; background: #2563eb; color: white; font-size: 17px; font-weight: 900; margin-bottom: 12px; cursor: pointer; box-shadow: 0 4px 12px rgba(37, 99, 235, 0.2); }
+        .btn-gps.ok { background: var(--primary); box-shadow: 0 4px 12px rgba(34, 197, 94, 0.2); }
+        
+        /* 左右分散セクション */
+        .disp-section { margin-top: 32px; padding-top: 24px; border-top: 1px solid #f3f4f6; text-align: center; }
+        .disp-controls { display: flex; align-items: center; justify-content: space-between; gap: 16px; margin-top: 16px; }
+        .btn-side { flex: 1; height: 64px; border-radius: 20px; border: 1px solid transparent; font-size: 24px; font-weight: 900; cursor: pointer; }
+        .btn-l { background: #fef2f2; color: #ef4444; border-color: #fee2e2; }
+        .btn-r { background: #eff6ff; color: #3b82f6; border-color: #dbeafe; }
+        
+        #lat-display { font-size: 40px; font-weight: 900; margin: 0; line-height: 1; }
+        .side-label { font-size: 11px; font-weight: 800; text-transform: uppercase; margin-top: 4px; display: block; }
+
+        .btn-save { width: 100%; padding: 22px; border-radius: 20px; border: none; background: var(--dark); color: white; font-size: 20px; font-weight: 900; margin-top: 40px; cursor: pointer; box-shadow: 0 10px 25px -5px rgba(0,0,0,0.3); }
+
+        /* 分析カード */
+        .stats-card { background: white; padding: 20px; border-radius: 28px; border-left: 12px solid var(--primary); margin-bottom: 16px; box-shadow: 0 4px 6px rgba(0,0,0,0.02); }
+        .stats-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 12px; }
+        .club-name { font-size: 28px; font-weight: 900; letter-spacing: -0.02em; }
+        .shot-count { font-size: 10px; font-weight: 800; background: #f3f4f6; padding: 4px 10px; border-radius: 99px; color: #9ca3af; }
+        .stats-body { display: flex; justify-content: space-between; align-items: flex-end; }
+        .stat-val { font-size: 30px; font-weight: 900; line-height: 1; }
+        .stat-unit { font-size: 12px; color: #9ca3af; margin-left: 2px; font-weight: bold; }
+
+        /* セレクター画面 (ダークモード) */
+        #selector-modal { display: none; position: fixed; inset: 0; background: #1a1c1e; color: #e2e2e6; z-index: 1000; overflow-y: auto; }
+        #selector-modal.active { display: block; }
+        .sel-header { position: sticky; top: 0; background: #1a1c1e; padding: 24px; border-bottom: 1px solid #333; display: flex; justify-content: space-between; align-items: center; z-index: 10; }
+        .sel-item { padding: 20px 24px; border-bottom: 1px solid #333; display: flex; justify-content: space-between; align-items: center; cursor: pointer; }
+        .sel-item:active { background: #333; }
+        .radio-dot { width: 24px; height: 24px; border: 2px solid #555; border-radius: 50%; position: relative; }
+        .sel-item.selected .radio-dot { border-color: #a8c7ff; }
+        .sel-item.selected .radio-dot::after { content: ""; position: absolute; inset: 5px; background: #a8c7ff; border-radius: 50%; }
+
+        .footer-btns { margin-top: 48px; text-align: center; padding-bottom: 40px; }
+        .btn-reset { background: none; border: none; color: #fca5a5; font-size: 10px; font-weight: 900; letter-spacing: 0.2em; cursor: pointer; }
     </style>
 </head>
-<body class="bg-gray-100 min-h-screen text-gray-800">
+<body>
 
-    <!-- セレクターモーダル -->
-    <div id="selection-modal">
-        <div class="sticky top-0 bg-[#1a1c1e] p-6 border-b border-[#44474e] flex items-center justify-between z-10">
-            <h3 id="modal-title" class="text-xl font-bold uppercase tracking-tight">Select Distance</h3>
-            <button onclick="closeModal()" class="text-gray-400 font-bold px-2 py-1">CANCEL</button>
-        </div>
-        <div id="modal-list" class="pb-10"></div>
-    </div>
-
-    <!-- ナビゲーション -->
-    <nav class="bg-white shadow-sm sticky top-0 z-50 border-b border-gray-100">
-        <div class="flex text-center font-bold">
-            <button onclick="showPage('record')" id="tab-record" class="flex-1 py-4 active-tab transition-all">計測入力</button>
-            <button onclick="showPage('stats')" id="tab-stats" class="flex-1 py-4 text-gray-400 transition-all">分析データ</button>
-        </div>
+    <nav>
+        <button id="tab-rec" class="active" onclick="showPage('rec')">計測入力</button>
+        <button id="tab-sta" onclick="showPage('sta')">分析データ</button>
     </nav>
 
-    <!-- 1. 計測入力画面 -->
-    <div id="page-record" class="p-4 max-w-md mx-auto block">
-        <div class="bg-white p-6 rounded-[2rem] shadow-md mb-6 border border-gray-50">
-            <label class="block text-[10px] font-black text-gray-400 uppercase mb-2 tracking-widest">Club Selection</label>
-            <select id="club" class="w-full p-4 bg-gray-50 rounded-2xl text-xl font-black mb-6 ring-1 ring-gray-200 outline-none">
-                <option value="1W">1W</option><option value="3W">3W</option><option value="5W">5W</option>
-                <option value="3U">3U</option><option value="4U">4U</option><option value="5U">5U</option>
-                <option value="5I">5I</option><option value="6I">6I</option><option value="7I">7I</option>
-                <option value="8I">8I</option><option value="9I">9I</option><option value="PW">PW</option>
-                <option value="52°">52°</option><option value="58°">58°</option>
+    <!-- 記録画面 -->
+    <div id="page-rec" class="container">
+        <div class="card">
+            <span class="label-tiny">Club Selection</span>
+            <select id="club-select">
+                <option>1W</option><option>3W</option><option>5W</option>
+                <option>3U</option><option>4U</option><option>5U</option>
+                <option>5I</option><option>6I</option><option>7I</option>
+                <option>8I</option><option>9I</option><option>PW</option>
+                <option>52°</option><option>58°</option>
             </select>
 
-            <div class="grid grid-cols-1 gap-3">
-                <button onclick="getLocation('start')" id="btn-start" class="w-full py-5 rounded-2xl bg-blue-600 text-white font-black shadow-lg active:bg-blue-700">地点A (打点) を取得</button>
-                <button onclick="getLocation('end')" id="btn-end" class="w-full py-5 rounded-2xl bg-blue-600 text-white font-black shadow-lg active:bg-blue-700">地点B (停止) を取得</button>
-            </div>
+            <button class="btn-gps" id="btn-a" onclick="fetchGPS('a')">地点A (打点) を取得</button>
+            <button class="btn-gps" id="btn-b" onclick="fetchGPS('b')">地点B (停止) を取得</button>
 
-            <div class="mt-8 pt-6 border-t border-gray-100">
-                <label class="block text-[10px] font-black text-gray-400 mb-4 uppercase tracking-widest text-center">Lateral Dispersion (yd)</label>
-                <div class="flex items-center justify-between gap-4 px-2">
-                    <button onclick="openModal('L')" class="flex-1 h-16 bg-red-50 text-red-500 rounded-2xl text-2xl font-black border border-red-100 active:bg-red-100">L</button>
-                    <div class="flex-1 text-center">
-                        <input type="number" id="lateral-error" value="0" readonly class="w-full bg-transparent text-4xl font-black text-center outline-none">
-                        <span id="side-label" class="text-[10px] font-bold text-gray-400 uppercase tracking-widest block italic">Straight</span>
+            <div class="disp-section">
+                <span class="label-tiny">Lateral Dispersion (yd)</span>
+                <div class="disp-controls">
+                    <button class="btn-side btn-l" onclick="openSelector('L')">L</button>
+                    <div>
+                        <p id="lat-display">0</p>
+                        <span id="side-txt" class="side-label" style="color:#9ca3af">Straight</span>
                     </div>
-                    <button onclick="openModal('R')" class="flex-1 h-16 bg-blue-50 text-blue-500 rounded-2xl text-2xl font-black border border-blue-100 active:bg-blue-100">R</button>
+                    <button class="btn-side btn-r" onclick="openSelector('R')">R</button>
                 </div>
-                <p class="text-[9px] text-center text-gray-400 mt-5 font-bold uppercase tracking-tight italic">Tap L or R to Select (3 - 45 yd)</p>
             </div>
 
-            <button onclick="saveShot()" class="w-full mt-10 bg-gray-900 text-white p-6 rounded-2xl font-black text-xl shadow-2xl active:scale-95 transition-all">SAVE RECORD</button>
+            <button class="btn-save" onclick="saveRecord()">SAVE RECORD</button>
         </div>
     </div>
 
-    <!-- 2. 分析画面 -->
-    <div id="page-stats" class="p-4 max-w-md mx-auto hidden">
-        <div class="flex justify-between items-end mb-6 px-1">
-            <h2 class="text-2xl font-black uppercase italic tracking-tighter">Analysis</h2>
-            <span id="shot-count" class="text-xs font-bold bg-green-100 text-[#22c55e] px-3 py-1 rounded-full border border-green-200 tracking-widest uppercase">0 Shots</span>
+    <!-- 分析画面 -->
+    <div id="page-sta" class="container" style="display:none">
+        <div id="stats-list"></div>
+        <div class="footer-btns">
+            <button onclick="exportCSV()" style="margin-bottom:20px; color:#9ca3af; font-weight:bold; border:1px solid #ddd; padding:10px 20px; border-radius:10px; background:white;">CSVを書き出す</button><br>
+            <button class="btn-reset" onclick="resetAll()">RESET ALL DATA</button>
         </div>
-        <div id="stats-container" class="space-y-4"></div>
-        <div class="mt-12 space-y-3 px-2 pb-10">
-            <button onclick="exportCSV()" class="w-full py-4 bg-white text-gray-500 rounded-2xl text-sm font-bold border border-gray-100 shadow-sm active:bg-gray-50">CSVファイルを書き出す</button>
-            <button onclick="clearData()" class="w-full py-4 text-red-200 text-[10px] font-black uppercase tracking-[0.3em]">Reset All Data</button>
+    </div>
+
+    <!-- セレクターモーダル -->
+    <div id="selector-modal">
+        <div class="sel-header">
+            <h2 id="sel-title" style="margin:0; font-size:20px; font-weight:900;">SELECT</h2>
+            <button onclick="closeSelector()" style="background:none; border:none; color:#9ca3af; font-weight:bold; font-size:14px;">CANCEL</button>
         </div>
+        <div id="sel-options"></div>
     </div>
 
     <script>
         let posA = null, posB = null;
-        const M_TO_YD = 1.09361;
+        let lateralVal = 0;
 
-        // ページ切り替え
-        function showPage(page) {
-            document.getElementById('page-record').style.display = (page === 'record') ? 'block' : 'none';
-            document.getElementById('page-stats').style.display = (page === 'stats') ? 'block' : 'none';
-            document.getElementById('tab-record').classList.toggle('active-tab', page === 'record');
-            document.getElementById('tab-stats').classList.toggle('active-tab', page === 'stats');
-            if (page === 'stats') displayStats();
-            closeModal();
+        function showPage(p) {
+            document.getElementById('page-rec').style.display = p==='rec'?'block':'none';
+            document.getElementById('page-sta').style.display = p==='sta'?'block':'none';
+            document.getElementById('tab-rec').className = p==='rec'?'active':'';
+            document.getElementById('tab-sta').className = p==='sta'?'active':'';
+            if(p==='sta') renderStats();
         }
 
-        // --- セレクターモーダルの制御 (3-45yd) ---
-        function openModal(side) {
-            const modal = document.getElementById('selection-modal');
-            const list = document.getElementById('modal-list');
-            const title = document.getElementById('modal-title');
-            const currentVal = parseInt(document.getElementById('lateral-error').value);
+        function fetchGPS(type) {
+            const btn = document.getElementById('btn-'+type);
+            btn.innerText = "GPS測位中...";
+            navigator.geolocation.getCurrentPosition(p => {
+                const c = {lat: p.coords.latitude, lng: p.coords.longitude};
+                if(type==='a') posA = c; else posB = c;
+                btn.innerText = (type==='a'?'地点A':'地点B') + " OK ✓";
+                btn.classList.add('ok');
+            }, e => alert("GPSを許可してください"), {enableHighAccuracy:true});
+        }
+
+        function openSelector(side) {
+            const list = document.getElementById('sel-options');
+            const title = document.getElementById('sel-title');
+            title.innerText = side === 'L' ? 'LEFT DISPERSION' : 'RIGHT DISPERSION';
             
-            title.innerText = side === 'L' ? 'Left Dispersion' : 'Right Dispersion';
-            list.innerHTML = '';
-
-            addListItem(list, 0, currentVal === 0, side);
-            for (let i = 3; i <= 45; i += 3) {
+            let html = `<div class="sel-item ${lateralVal===0?'selected':''}" onclick="setLateral(0)">
+                <span style="font-size:22px; font-weight:bold;">0 (Straight)</span><div class="radio-dot"></div></div>`;
+            
+            for(let i=3; i<=45; i+=3) {
                 const val = side === 'L' ? -i : i;
-                addListItem(list, val, currentVal === val, side);
+                html += `<div class="sel-item ${lateralVal===val?'selected':''}" onclick="setLateral(${val})">
+                    <span style="font-size:22px; font-weight:bold;">${i} yd</span><div class="radio-dot"></div></div>`;
             }
-            modal.classList.add('active');
-            modal.scrollTop = 0;
+            list.innerHTML = html;
+            document.getElementById('selector-modal').classList.add('active');
+            document.getElementById('selector-modal').scrollTop = 0;
         }
 
-        function addListItem(container, value, isSelected, side) {
-            const label = value === 0 ? "0 (Straight)" : Math.abs(value) + " yd";
-            const item = document.createElement('div');
-            item.className = 'selector-item';
-            item.onclick = () => selectValue(value);
-            item.innerHTML = `
-                <span class="text-2xl font-bold">${label}</span>
-                <div class="radio-circle ${isSelected ? 'selected' : ''}">
-                    <div class="radio-dot"></div>
-                </div>
-            `;
-            container.appendChild(item);
+        function closeSelector() { document.getElementById('selector-modal').classList.remove('active'); }
+
+        function setLateral(v) {
+            lateralVal = v;
+            document.getElementById('lat-display').innerText = Math.abs(v);
+            const txt = document.getElementById('side-txt');
+            if(v<0) { txt.innerText="Left"; txt.style.color="#ef4444"; }
+            else if(v>0) { txt.innerText="Right"; txt.style.color="#3b82f6"; }
+            else { txt.innerText="Straight"; txt.style.color="#9ca3af"; }
+            closeSelector();
         }
 
-        function closeModal() { document.getElementById('selection-modal').classList.remove('active'); }
-
-        function selectValue(val) {
-            const input = document.getElementById('lateral-error');
-            const label = document.getElementById('side-label');
-            input.value = val;
-            if (val < 0) { label.innerText = "Left"; label.className = "text-[10px] font-bold text-red-500 uppercase tracking-widest block italic"; }
-            else if (val > 0) { label.innerText = "Right"; label.className = "text-[10px] font-bold text-blue-500 uppercase tracking-widest block italic"; }
-            else { label.innerText = "Straight"; label.className = "text-[10px] font-bold text-gray-400 uppercase tracking-widest block italic"; }
-            closeModal();
-        }
-
-        // --- GPS & データ保存 ---
-        function getLocation(type) {
-            const btn = (type === 'start') ? document.getElementById('btn-start') : document.getElementById('btn-end');
-            const originalText = btn.innerText;
-            btn.innerText = "測位中...";
-            navigator.geolocation.getCurrentPosition((position) => {
-                const coords = { lat: position.coords.latitude, lng: position.coords.longitude };
-                if (type === 'start') { posA = coords; btn.innerText = "打点A OK ✓"; }
-                else { posB = coords; btn.innerText = "停止点B OK ✓"; }
-                btn.classList.add('btn-active');
-            }, (err) => {
-                alert("GPSを許可してください。");
-                btn.innerText = originalText;
-            }, { enableHighAccuracy: true });
-        }
-
-        function saveShot() {
-            if (!posA || !posB) { alert("地点AとBを取得してください"); return; }
+        function saveRecord() {
+            if(!posA || !posB) return alert("AとBの両地点を取得してください");
             const R = 6371000;
             const dLat = (posB.lat - posA.lat) * Math.PI / 180;
             const dLon = (posB.lng - posA.lng) * Math.PI / 180;
             const a = Math.sin(dLat/2)**2 + Math.cos(posA.lat*Math.PI/180)*Math.cos(posB.lat*Math.PI/180)*Math.sin(dLon/2)**2;
-            const dist = Math.round(R * 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a)) * M_TO_YD);
-
-            const shot = {
-                club: document.getElementById('club').value, dist,
-                lat: parseInt(document.getElementById('lateral-error').value) || 0,
-                ts: new Date().getTime()
-            };
-            const logs = JSON.parse(localStorage.getItem('golf_logs_final_v8') || '[]');
-            logs.push(shot);
-            localStorage.setItem('golf_logs_final_v8', JSON.stringify(logs));
-            alert("保存しました"); location.reload();
+            const dist = Math.round(R * 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1-a)) * 1.09361);
+            
+            const logs = JSON.parse(localStorage.getItem('golf_v10_logs') || '[]');
+            logs.push({c: document.getElementById('club-select').value, d: dist, l: lateralVal, ts: Date.now()});
+            localStorage.setItem('golf_v10_logs', JSON.stringify(logs));
+            alert("記録しました");
+            location.reload();
         }
 
-        function displayStats() {
-            const logs = JSON.parse(localStorage.getItem('golf_logs_final_v8') || '[]');
-            const container = document.getElementById('stats-container');
-            document.getElementById('shot-count').innerText = `${logs.length} Shots`;
-            if (!logs.length) { container.innerHTML = `<div class="text-center py-20 text-gray-300 font-bold uppercase tracking-widest">No Data</div>`; return; }
-            const clubOrder = ["1W", "3W", "5W", "3U", "4U", "5U", "5I", "6I", "7I", "8I", "9I", "PW", "52°", "58°"];
-            const stats = logs.reduce((acc, s) => { if (!acc[s.club]) acc[s.club] = { d: [], l: [] }; acc[s.club].d.push(s.dist); acc[s.club].l.push(s.lat); return acc; }, {});
-            container.innerHTML = '';
-            clubOrder.forEach(club => {
-                const d = stats[club]; if (!d) return;
-                const avgD = Math.round(d.d.reduce((a,b)=>a+b,0)/d.d.length);
-                const avgL = (d.l.reduce((a,b)=>a+b,0)/d.l.length).toFixed(1);
-                container.innerHTML += `
-                    <div class="bg-white p-5 rounded-[2rem] shadow-sm border-l-[12px] border-[#22c55e]">
-                        <div class="flex justify-between items-center mb-4"><span class="text-3xl font-black">${club}</span><span class="text-[10px] font-black text-gray-400 bg-gray-50 px-3 py-1 rounded-full border border-gray-100">${d.d.length} SHOTS</span></div>
-                        <div class="flex justify-between items-end">
-                            <div class="flex flex-col"><span class="text-[9px] text-gray-400 font-black uppercase block tracking-tighter">Avg Carry</span><span class="text-3xl font-black leading-none">${avgD}<span class="text-xs ml-1 font-bold italic text-gray-400 uppercase">yd</span></span></div>
-                            <div class="flex flex-col text-right"><span class="text-[9px] text-gray-400 font-black uppercase block tracking-tighter">Dispersion</span><span class="text-xl font-black leading-none ${avgL > 0 ? 'text-blue-600' : (avgL < 0 ? 'text-red-600' : 'text-gray-400')}">${avgL > 0 ? '右 '+avgL : (avgL < 0 ? '左 '+Math.abs(avgL) : '0')}yd</span></div>
-                        </div>
-                    </div>`;
+        function renderStats() {
+            const logs = JSON.parse(localStorage.getItem('golf_v10_logs') || '[]');
+            const list = document.getElementById('stats-list');
+            if(!logs.length) { list.innerHTML = '<p style="text-align:center; color:#9ca3af; padding-top:100px; font-weight:bold;">NO DATA</p>'; return; }
+            
+            const stats = logs.reduce((acc, s) => {
+                if(!acc[s.c]) acc[s.c] = {d:[], l:[]};
+                acc[s.c].d.push(s.d); acc[s.c].l.push(s.l);
+                return acc;
+            }, {});
+
+            list.innerHTML = '';
+            ["1W","3W","5W","3U","4U","5U","5I","6I","7I","8I","9I","PW","52°","58°"].forEach(club => {
+                if(!stats[club]) return;
+                const avgD = Math.round(stats[club].d.reduce((a,b)=>a+b)/stats[club].d.length);
+                const avgL = (stats[club].l.reduce((a,b)=>a+b)/stats[club].l.length).toFixed(1);
+                const sideColor = avgL > 0 ? '#3b82f6' : (avgL < 0 ? '#ef4444' : '#9ca3af');
+                const sideTxt = avgL > 0 ? 'R '+avgL : (avgL < 0 ? 'L '+Math.abs(avgL) : '0');
+
+                list.innerHTML += `<div class="stats-card">
+                    <div class="stats-header"><span class="club-name">${club}</span><span class="shot-count">${stats[club].d.length} SHOTS</span></div>
+                    <div class="stats-body">
+                        <div><span class="label-tiny">Avg Carry</span><br><span class="stat-val">${avgD}</span><span class="stat-unit">yd</span></div>
+                        <div style="text-align:right"><span class="label-tiny">Dispersion</span><br><span class="stat-val" style="color:${sideColor}">${sideTxt}</span><span class="stat-unit">yd</span></div>
+                    </div>
+                </div>`;
             });
         }
 
-        function clearData() { if(confirm("消去しますか？")) { localStorage.clear(); location.reload(); } }
+        function resetAll() { if(confirm("全データを消去しますか？")) { localStorage.clear(); location.reload(); } }
+        
         function exportCSV() {
-            const logs = JSON.parse(localStorage.getItem('golf_logs_final_v8') || '[]');
+            const logs = JSON.parse(localStorage.getItem('golf_v10_logs') || '[]');
             if(!logs.length) return;
-            let csv = "\uFEFFClub,Distance(yd),Lateral(yd)\n" + logs.map(s => `${s.club},${s.dist},${s.lat}`).join("\n");
-            const link = document.createElement("a");
-            link.href = URL.createObjectURL(new Blob([csv], {type:"text/csv;charset=utf-8"}));
-            link.download = `golf_data_${new Date().toISOString().slice(0,10)}.csv`; link.click();
+            let csv = "\uFEFFClub,Distance(yd),Lateral(yd)\n" + logs.map(s => `${s.c},${s.d},${s.l}`).join("\n");
+            const blob = new Blob([csv], {type: "text/csv;charset=utf-8"});
+            const a = document.createElement("a");
+            a.href = URL.createObjectURL(blob);
+            a.download = "golf_data.csv"; a.click();
         }
 
-        // --- 強力なオフライン対応 Service Worker 登録 ---
+        // --- 強力なService Worker登録 ---
         if ('serviceWorker' in navigator) {
             window.addEventListener('load', () => {
-                navigator.serviceWorker.register('./sw.js')
-                .then(reg => {
-                    console.log('SW Registered');
-                    // 更新がある場合に通知（任意）
+                navigator.serviceWorker.register('./sw.js').then(reg => {
                     reg.onupdatefound = () => {
-                        const installingWorker = reg.installing;
-                        installingWorker.onstatechange = () => {
-                            if (installingWorker.state === 'installed' && navigator.serviceWorker.controller) {
-                                console.log('New content is available; please refresh.');
-                            }
-                        };
+                        const i = reg.installing;
+                        i.onstatechange = () => { if (i.state === 'installed' && navigator.serviceWorker.controller) location.reload(); };
                     };
-                }).catch(err => console.log('SW failed', err));
+                });
             });
         }
     </script>
