@@ -5,16 +5,18 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
     <title>GolfLog</title>
     
+    <!-- PWA Settings -->
     <link rel="manifest" href="manifest.json">
     <meta name="theme-color" content="#22c55e">
     <meta name="apple-mobile-web-app-capable" content="yes">
     <meta name="apple-mobile-web-app-status-bar-style" content="default">
+    <meta name="apple-mobile-web-app-title" content="GolfLog">
 
     <!-- アイコン設定 -->
     <link rel="icon" type="image/svg+xml" href="icon-round.svg">
     <link rel="apple-touch-icon" href="icon.svg">
 
-    <!-- Tailwind CSS -->
+    <!-- Tailwind CSS (Offline Cacheable via SW) -->
     <script src="https://cdn.tailwindcss.com"></script>
     
     <style>
@@ -24,12 +26,12 @@
         .btn-active { background-color: #4ade80 !important; }
         input::-webkit-outer-spin-button, input::-webkit-inner-spin-button { -webkit-appearance: none; margin: 0; }
         
-        /* スクリーンショット風のダークセレクター画面 */
+        /* ダークテーマ セレクター画面 */
         #selection-modal {
             display: none;
             position: fixed;
             inset: 0;
-            background-color: #1a1c1e; /* ダーク背景 */
+            background-color: #1a1c1e;
             color: #e2e2e6;
             z-index: 9999;
             overflow-y: auto;
@@ -45,20 +47,14 @@
         }
         .selector-item:active { background-color: #44474e; }
         .radio-circle {
-            width: 24px;
-            height: 24px;
+            width: 24px; height: 24px;
             border: 2px solid #c4c6cf;
             border-radius: 50%;
-            display: flex;
-            align-items: center;
-            justify-content: center;
+            display: flex; align-items: center; justify-content: center;
         }
-        .radio-circle.selected {
-            border-color: #a8c7ff;
-        }
+        .radio-circle.selected { border-color: #a8c7ff; }
         .radio-dot {
-            width: 12px;
-            height: 12px;
+            width: 12px; height: 12px;
             background-color: #a8c7ff;
             border-radius: 50%;
             display: none;
@@ -68,18 +64,16 @@
 </head>
 <body class="bg-gray-100 min-h-screen text-gray-800">
 
-    <!-- フルスクリーン選択モーダル -->
+    <!-- セレクターモーダル -->
     <div id="selection-modal">
         <div class="sticky top-0 bg-[#1a1c1e] p-6 border-b border-[#44474e] flex items-center justify-between z-10">
             <h3 id="modal-title" class="text-xl font-bold uppercase tracking-tight">Select Distance</h3>
             <button onclick="closeModal()" class="text-gray-400 font-bold px-2 py-1">CANCEL</button>
         </div>
-        <div id="modal-list" class="pb-10">
-            <!-- JSで動的にリスト生成 -->
-        </div>
+        <div id="modal-list" class="pb-10"></div>
     </div>
 
-    <!-- メインナビゲーション -->
+    <!-- ナビゲーション -->
     <nav class="bg-white shadow-sm sticky top-0 z-50 border-b border-gray-100">
         <div class="flex text-center font-bold">
             <button onclick="showPage('record')" id="tab-record" class="flex-1 py-4 active-tab transition-all">計測入力</button>
@@ -87,7 +81,7 @@
         </div>
     </nav>
 
-    <!-- 記録入力画面 -->
+    <!-- 1. 計測入力画面 -->
     <div id="page-record" class="p-4 max-w-md mx-auto block">
         <div class="bg-white p-6 rounded-[2rem] shadow-md mb-6 border border-gray-50">
             <label class="block text-[10px] font-black text-gray-400 uppercase mb-2 tracking-widest">Club Selection</label>
@@ -100,38 +94,37 @@
             </select>
 
             <div class="grid grid-cols-1 gap-3">
-                <button onclick="getLocation('start')" id="btn-start" class="w-full py-5 rounded-2xl bg-blue-600 text-white font-black shadow-lg">地点A (打点) を取得</button>
-                <button onclick="getLocation('end')" id="btn-end" class="w-full py-5 rounded-2xl bg-blue-600 text-white font-black shadow-lg">地点B (停止) を取得</button>
+                <button onclick="getLocation('start')" id="btn-start" class="w-full py-5 rounded-2xl bg-blue-600 text-white font-black shadow-lg active:bg-blue-700">地点A (打点) を取得</button>
+                <button onclick="getLocation('end')" id="btn-end" class="w-full py-5 rounded-2xl bg-blue-600 text-white font-black shadow-lg active:bg-blue-700">地点B (停止) を取得</button>
             </div>
 
-            <!-- 分散入力部分 -->
             <div class="mt-8 pt-6 border-t border-gray-100">
                 <label class="block text-[10px] font-black text-gray-400 mb-4 uppercase tracking-widest text-center">Lateral Dispersion (yd)</label>
                 <div class="flex items-center justify-between gap-4 px-2">
-                    <button onclick="openModal('L')" class="flex-1 h-16 bg-red-50 text-red-500 rounded-2xl text-2xl font-black border border-red-100">L</button>
+                    <button onclick="openModal('L')" class="flex-1 h-16 bg-red-50 text-red-500 rounded-2xl text-2xl font-black border border-red-100 active:bg-red-100">L</button>
                     <div class="flex-1 text-center">
                         <input type="number" id="lateral-error" value="0" readonly class="w-full bg-transparent text-4xl font-black text-center outline-none">
                         <span id="side-label" class="text-[10px] font-bold text-gray-400 uppercase tracking-widest block italic">Straight</span>
                     </div>
-                    <button onclick="openModal('R')" class="flex-1 h-16 bg-blue-50 text-blue-500 rounded-2xl text-2xl font-black border border-blue-100">R</button>
+                    <button onclick="openModal('R')" class="flex-1 h-16 bg-blue-50 text-blue-500 rounded-2xl text-2xl font-black border border-blue-100 active:bg-blue-100">R</button>
                 </div>
-                <p class="text-[9px] text-center text-gray-400 mt-5 font-bold uppercase tracking-tight">タップして 3 〜 45 yd を選択</p>
+                <p class="text-[9px] text-center text-gray-400 mt-5 font-bold uppercase tracking-tight italic">Tap L or R to Select (3 - 45 yd)</p>
             </div>
 
-            <button onclick="saveShot()" class="w-full mt-10 bg-gray-900 text-white p-6 rounded-2xl font-black text-xl shadow-2xl">SAVE RECORD</button>
+            <button onclick="saveShot()" class="w-full mt-10 bg-gray-900 text-white p-6 rounded-2xl font-black text-xl shadow-2xl active:scale-95 transition-all">SAVE RECORD</button>
         </div>
     </div>
 
-    <!-- 分析画面 -->
+    <!-- 2. 分析画面 -->
     <div id="page-stats" class="p-4 max-w-md mx-auto hidden">
         <div class="flex justify-between items-end mb-6 px-1">
             <h2 class="text-2xl font-black uppercase italic tracking-tighter">Analysis</h2>
-            <span id="shot-count" class="text-xs font-bold bg-green-100 text-[#22c55e] px-3 py-1 rounded-full border border-green-200">0 Shots</span>
+            <span id="shot-count" class="text-xs font-bold bg-green-100 text-[#22c55e] px-3 py-1 rounded-full border border-green-200 tracking-widest uppercase">0 Shots</span>
         </div>
         <div id="stats-container" class="space-y-4"></div>
         <div class="mt-12 space-y-3 px-2 pb-10">
-            <button onclick="exportCSV()" class="w-full py-4 bg-white text-gray-500 rounded-2xl text-sm font-bold border border-gray-100 shadow-sm">CSVファイルを書き出す</button>
-            <button onclick="clearData()" class="w-full py-4 text-red-200 text-[10px] font-black uppercase tracking-[0.3em]">Reset Data</button>
+            <button onclick="exportCSV()" class="w-full py-4 bg-white text-gray-500 rounded-2xl text-sm font-bold border border-gray-100 shadow-sm active:bg-gray-50">CSVファイルを書き出す</button>
+            <button onclick="clearData()" class="w-full py-4 text-red-200 text-[10px] font-black uppercase tracking-[0.3em]">Reset All Data</button>
         </div>
     </div>
 
@@ -139,15 +132,17 @@
         let posA = null, posB = null;
         const M_TO_YD = 1.09361;
 
+        // ページ切り替え
         function showPage(page) {
             document.getElementById('page-record').style.display = (page === 'record') ? 'block' : 'none';
             document.getElementById('page-stats').style.display = (page === 'stats') ? 'block' : 'none';
             document.getElementById('tab-record').classList.toggle('active-tab', page === 'record');
             document.getElementById('tab-stats').classList.toggle('active-tab', page === 'stats');
             if (page === 'stats') displayStats();
+            closeModal();
         }
 
-        // --- セレクターモーダルの制御 ---
+        // --- セレクターモーダルの制御 (3-45yd) ---
         function openModal(side) {
             const modal = document.getElementById('selection-modal');
             const list = document.getElementById('modal-list');
@@ -157,17 +152,12 @@
             title.innerText = side === 'L' ? 'Left Dispersion' : 'Right Dispersion';
             list.innerHTML = '';
 
-            // 0ヤード (Straight)
             addListItem(list, 0, currentVal === 0, side);
-
-            // 3〜45ヤード (3刻み) - ご要望通り上限を45に変更
             for (let i = 3; i <= 45; i += 3) {
                 const val = side === 'L' ? -i : i;
                 addListItem(list, val, currentVal === val, side);
             }
-
             modal.classList.add('active');
-            // スクロール位置を一番上に戻す
             modal.scrollTop = 0;
         }
 
@@ -176,7 +166,6 @@
             const item = document.createElement('div');
             item.className = 'selector-item';
             item.onclick = () => selectValue(value);
-            
             item.innerHTML = `
                 <span class="text-2xl font-bold">${label}</span>
                 <div class="radio-circle ${isSelected ? 'selected' : ''}">
@@ -186,29 +175,19 @@
             container.appendChild(item);
         }
 
-        function closeModal() {
-            document.getElementById('selection-modal').classList.remove('active');
-        }
+        function closeModal() { document.getElementById('selection-modal').classList.remove('active'); }
 
         function selectValue(val) {
             const input = document.getElementById('lateral-error');
             const label = document.getElementById('side-label');
             input.value = val;
-            
-            if (val < 0) {
-                label.innerText = "Left";
-                label.className = "text-[10px] font-bold text-red-500 uppercase tracking-widest block italic";
-            } else if (val > 0) {
-                label.innerText = "Right";
-                label.className = "text-[10px] font-bold text-blue-500 uppercase tracking-widest block italic";
-            } else {
-                label.innerText = "Straight";
-                label.className = "text-[10px] font-bold text-gray-400 uppercase tracking-widest block italic";
-            }
+            if (val < 0) { label.innerText = "Left"; label.className = "text-[10px] font-bold text-red-500 uppercase tracking-widest block italic"; }
+            else if (val > 0) { label.innerText = "Right"; label.className = "text-[10px] font-bold text-blue-500 uppercase tracking-widest block italic"; }
+            else { label.innerText = "Straight"; label.className = "text-[10px] font-bold text-gray-400 uppercase tracking-widest block italic"; }
             closeModal();
         }
 
-        // --- GPS計測とデータ処理 ---
+        // --- GPS & データ保存 ---
         function getLocation(type) {
             const btn = (type === 'start') ? document.getElementById('btn-start') : document.getElementById('btn-end');
             const originalText = btn.innerText;
@@ -219,7 +198,7 @@
                 else { posB = coords; btn.innerText = "停止点B OK ✓"; }
                 btn.classList.add('btn-active');
             }, (err) => {
-                alert("GPSを許可してください");
+                alert("GPSを許可してください。");
                 btn.innerText = originalText;
             }, { enableHighAccuracy: true });
         }
@@ -233,55 +212,34 @@
             const dist = Math.round(R * 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a)) * M_TO_YD);
 
             const shot = {
-                club: document.getElementById('club').value,
-                dist,
+                club: document.getElementById('club').value, dist,
                 lat: parseInt(document.getElementById('lateral-error').value) || 0,
                 ts: new Date().getTime()
             };
-            const logs = JSON.parse(localStorage.getItem('golf_logs_v7_45yd') || '[]');
+            const logs = JSON.parse(localStorage.getItem('golf_logs_final_v8') || '[]');
             logs.push(shot);
-            localStorage.setItem('golf_logs_v7_45yd', JSON.stringify(logs));
-            alert("保存しました");
-            location.reload();
+            localStorage.setItem('golf_logs_final_v8', JSON.stringify(logs));
+            alert("保存しました"); location.reload();
         }
 
         function displayStats() {
-            const logs = JSON.parse(localStorage.getItem('golf_logs_v7_45yd') || '[]');
+            const logs = JSON.parse(localStorage.getItem('golf_logs_final_v8') || '[]');
             const container = document.getElementById('stats-container');
             document.getElementById('shot-count').innerText = `${logs.length} Shots`;
             if (!logs.length) { container.innerHTML = `<div class="text-center py-20 text-gray-300 font-bold uppercase tracking-widest">No Data</div>`; return; }
-            
             const clubOrder = ["1W", "3W", "5W", "3U", "4U", "5U", "5I", "6I", "7I", "8I", "9I", "PW", "52°", "58°"];
-            const stats = logs.reduce((acc, s) => { 
-                if (!acc[s.club]) acc[s.club] = { d: [], l: [] }; 
-                acc[s.club].d.push(s.dist); 
-                acc[s.club].l.push(s.lat); 
-                return acc; 
-            }, {});
-
+            const stats = logs.reduce((acc, s) => { if (!acc[s.club]) acc[s.club] = { d: [], l: [] }; acc[s.club].d.push(s.dist); acc[s.club].l.push(s.lat); return acc; }, {});
             container.innerHTML = '';
             clubOrder.forEach(club => {
-                const d = stats[club];
-                if (!d) return;
+                const d = stats[club]; if (!d) return;
                 const avgD = Math.round(d.d.reduce((a,b)=>a+b,0)/d.d.length);
                 const avgL = (d.l.reduce((a,b)=>a+b,0)/d.l.length).toFixed(1);
-                const lText = avgL > 0 ? `右 ${avgL}yd` : (avgL < 0 ? `左 ${Math.abs(avgL)}yd` : `0yd`);
-                
                 container.innerHTML += `
                     <div class="bg-white p-5 rounded-[2rem] shadow-sm border-l-[12px] border-[#22c55e]">
-                        <div class="flex justify-between items-center mb-4">
-                            <span class="text-3xl font-black tracking-tighter">${club}</span>
-                            <span class="text-[10px] font-black text-gray-400 bg-gray-50 px-3 py-1 rounded-full">${d.d.length}打</span>
-                        </div>
+                        <div class="flex justify-between items-center mb-4"><span class="text-3xl font-black">${club}</span><span class="text-[10px] font-black text-gray-400 bg-gray-50 px-3 py-1 rounded-full border border-gray-100">${d.d.length} SHOTS</span></div>
                         <div class="flex justify-between items-end">
-                            <div>
-                                <span class="text-[9px] text-gray-400 font-black uppercase block mb-1">Avg Carry</span>
-                                <span class="text-3xl font-black">${avgD}<span class="text-xs ml-1 font-bold italic text-gray-400">yd</span></span>
-                            </div>
-                            <div class="text-right">
-                                <span class="text-[9px] text-gray-400 font-black uppercase block mb-1">Dispersion</span>
-                                <span class="text-xl font-black ${avgL > 0 ? 'text-blue-600' : (avgL < 0 ? 'text-red-600' : 'text-gray-400')}">${lText}</span>
-                            </div>
+                            <div class="flex flex-col"><span class="text-[9px] text-gray-400 font-black uppercase block tracking-tighter">Avg Carry</span><span class="text-3xl font-black leading-none">${avgD}<span class="text-xs ml-1 font-bold italic text-gray-400 uppercase">yd</span></span></div>
+                            <div class="flex flex-col text-right"><span class="text-[9px] text-gray-400 font-black uppercase block tracking-tighter">Dispersion</span><span class="text-xl font-black leading-none ${avgL > 0 ? 'text-blue-600' : (avgL < 0 ? 'text-red-600' : 'text-gray-400')}">${avgL > 0 ? '右 '+avgL : (avgL < 0 ? '左 '+Math.abs(avgL) : '0')}yd</span></div>
                         </div>
                     </div>`;
             });
@@ -289,7 +247,7 @@
 
         function clearData() { if(confirm("消去しますか？")) { localStorage.clear(); location.reload(); } }
         function exportCSV() {
-            const logs = JSON.parse(localStorage.getItem('golf_logs_v7_45yd') || '[]');
+            const logs = JSON.parse(localStorage.getItem('golf_logs_final_v8') || '[]');
             if(!logs.length) return;
             let csv = "\uFEFFClub,Distance(yd),Lateral(yd)\n" + logs.map(s => `${s.club},${s.dist},${s.lat}`).join("\n");
             const link = document.createElement("a");
@@ -297,8 +255,23 @@
             link.download = `golf_data_${new Date().toISOString().slice(0,10)}.csv`; link.click();
         }
 
-        if ('serviceWorker' in navigator) { 
-            window.addEventListener('load', () => { navigator.serviceWorker.register('sw.js'); }); 
+        // --- 強力なオフライン対応 Service Worker 登録 ---
+        if ('serviceWorker' in navigator) {
+            window.addEventListener('load', () => {
+                navigator.serviceWorker.register('./sw.js')
+                .then(reg => {
+                    console.log('SW Registered');
+                    // 更新がある場合に通知（任意）
+                    reg.onupdatefound = () => {
+                        const installingWorker = reg.installing;
+                        installingWorker.onstatechange = () => {
+                            if (installingWorker.state === 'installed' && navigator.serviceWorker.controller) {
+                                console.log('New content is available; please refresh.');
+                            }
+                        };
+                    };
+                }).catch(err => console.log('SW failed', err));
+            });
         }
     </script>
 </body>
