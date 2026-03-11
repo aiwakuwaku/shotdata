@@ -5,7 +5,6 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
     <title>GolfLog</title>
     
-    <!-- PWA設定 -->
     <link rel="manifest" href="manifest.json">
     <meta name="theme-color" content="#22c55e">
     <meta name="apple-mobile-web-app-capable" content="yes">
@@ -31,7 +30,6 @@
         .btn-gps { width: 100%; padding: 20px; border-radius: 20px; border: none; background: #2563eb; color: white; font-size: 17px; font-weight: 900; margin-bottom: 12px; cursor: pointer; box-shadow: 0 4px 12px rgba(37, 99, 235, 0.2); }
         .btn-gps.ok { background: var(--primary); box-shadow: 0 4px 12px rgba(34, 197, 94, 0.2); }
         
-        /* 地点B取得時の結果表示用スタイル */
         #shot-result-wrap { margin: 10px 0 20px; text-align: center; background: #f0fdf4; padding: 15px; border-radius: 15px; border: 2px dashed #22c55e; display: none; }
         #shot-result-val { font-size: 28px; font-weight: 900; color: #15803d; margin: 0; }
 
@@ -46,7 +44,6 @@
 
         .btn-save { width: 100%; padding: 22px; border-radius: 20px; border: none; background: var(--dark); color: white; font-size: 20px; font-weight: 900; margin-top: 40px; cursor: pointer; box-shadow: 0 10px 25px -5px rgba(0,0,0,0.3); }
 
-        /* 分析カード */
         .stats-card { background: white; padding: 20px; border-radius: 28px; border-left: 12px solid var(--primary); margin-bottom: 16px; box-shadow: 0 4px 6px rgba(0,0,0,0.02); }
         .stats-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 12px; }
         .club-name { font-size: 28px; font-weight: 900; letter-spacing: -0.02em; }
@@ -88,7 +85,6 @@
 
             <button class="btn-gps" id="btn-a" onclick="fetchGPS('a')">地点A (打点) を取得</button>
             
-            <!-- 計測結果の表示エリア -->
             <div id="shot-result-wrap">
                 <span class="label-tiny" style="color:#15803d">Distance Result</span>
                 <p id="shot-result-val">0 <span style="font-size:14px">yd</span></p>
@@ -129,6 +125,8 @@
     </div>
 
     <script>
+        // ストレージキーを完全に固定（以前のデータと混同しないよう新しい名称へ）
+        const STORAGE_KEY = 'golf_app_data_v12';
         let posA = null, posB = null;
         let lateralVal = 0;
 
@@ -136,11 +134,11 @@
             document.getElementById('page-rec').style.display = p==='rec'?'block':'none';
             document.getElementById('page-sta').style.display = p==='sta'?'block':'none';
             document.getElementById('tab-rec').className = p==='rec'?'active':'';
-            document.getElementById('tab-stats' || 'tab-sta').className = p==='sta'?'active':'';
+            document.getElementById('tab-sta').className = p==='sta'?'active':'';
+            // 分析画面を開くたびに最新データを描画
             if(p==='sta') renderStats();
         }
 
-        // 飛距離計算ロジック
         function getDistYd(p1, p2) {
             const R = 6371000;
             const dLat = (p2.lat - p1.lat) * Math.PI / 180;
@@ -151,7 +149,7 @@
 
         function fetchGPS(type) {
             const btn = document.getElementById('btn-'+type);
-            btn.innerText = "GPS測位中...";
+            btn.innerText = "測位中...";
             navigator.geolocation.getCurrentPosition(p => {
                 const c = {lat: p.coords.latitude, lng: p.coords.longitude};
                 if(type==='a') {
@@ -197,34 +195,43 @@
         function saveRecord() {
             if(!posA || !posB) return alert("AとBを取得してください");
             const dist = getDistYd(posA, posB);
-            const logs = JSON.parse(localStorage.getItem('golf_v11_logs') || '[]');
+            const logs = JSON.parse(localStorage.getItem(STORAGE_KEY) || '[]');
             logs.push({c: document.getElementById('club-select').value, d: dist, l: lateralVal, ts: Date.now()});
-            localStorage.setItem('golf_v11_logs', JSON.stringify(logs));
-            alert("保存しました");
+            localStorage.setItem(STORAGE_KEY, JSON.stringify(logs));
+            alert("記録しました");
             location.reload();
         }
 
         function renderStats() {
-            const logs = JSON.parse(localStorage.getItem('golf_v11_logs') || '[]');
+            const logs = JSON.parse(localStorage.getItem(STORAGE_KEY) || '[]');
             const list = document.getElementById('stats-list');
-            if(!logs.length) { list.innerHTML = '<p style="text-align:center; color:#9ca3af; padding-top:100px; font-weight:bold;">NO DATA</p>'; return; }
+            
+            if(!logs || logs.length === 0) {
+                list.innerHTML = '<p style="text-align:center; color:#9ca3af; padding-top:100px; font-weight:bold;">NO DATA</p>';
+                return;
+            }
+
             const stats = logs.reduce((acc, s) => {
                 if(!acc[s.c]) acc[s.c] = {d:[], l:[]};
-                acc[s.c].d.push(s.d); acc[s.c].l.push(s.l);
+                acc[s.c].d.push(Number(s.d)); 
+                acc[s.c].l.push(Number(s.l));
                 return acc;
             }, {});
-            list.innerHTML = '';
-            ["1W","3W","5W","3U","4U","5U","5I","6I","7I","8I","9I","PW","52°","58°"].forEach(club => {
+
+            const clubOrder = ["1W","3W","5W","3U","4U","5U","5I","6I","7I","8I","9I","PW","52°","58°"];
+            let html = '';
+
+            clubOrder.forEach(club => {
                 if(!stats[club]) return;
                 const dists = stats[club].d;
-                const avgD = Math.round(dists.reduce((a,b)=>a+b)/dists.length);
+                const avgD = Math.round(dists.reduce((a,b)=>a+b, 0) / dists.length);
                 const maxD = Math.max(...dists);
                 const minD = Math.min(...dists);
-                const avgL = (stats[club].l.reduce((a,b)=>a+b)/stats[club].l.length).toFixed(1);
+                const avgL = (stats[club].l.reduce((a,b)=>a+b, 0) / stats[club].l.length).toFixed(1);
                 const sideColor = avgL > 0 ? '#3b82f6' : (avgL < 0 ? '#ef4444' : '#9ca3af');
                 const sideTxt = avgL > 0 ? 'R '+avgL : (avgL < 0 ? 'L '+Math.abs(avgL) : '0');
 
-                list.innerHTML += `<div class="stats-card">
+                html += `<div class="stats-card">
                     <div class="stats-header"><span class="club-name">${club}</span><span class="shot-count">${dists.length} SHOTS</span></div>
                     <div class="stats-body">
                         <div><span class="label-tiny">Avg Carry</span><br><span class="stat-val">${avgD}</span><span class="stat-unit">yd</span></div>
@@ -236,11 +243,13 @@
                     </div>
                 </div>`;
             });
+            list.innerHTML = html;
         }
 
-        function resetAll() { if(confirm("消去しますか？")) { localStorage.clear(); location.reload(); } }
+        function resetAll() { if(confirm("消去しますか？")) { localStorage.removeItem(STORAGE_KEY); location.reload(); } }
+        
         function exportCSV() {
-            const logs = JSON.parse(localStorage.getItem('golf_v11_logs') || '[]');
+            const logs = JSON.parse(localStorage.getItem(STORAGE_KEY) || '[]');
             if(!logs.length) return;
             let csv = "\uFEFFClub,Distance(yd),Lateral(yd)\n" + logs.map(s => `${s.c},${s.d},${s.l}`).join("\n");
             const blob = new Blob([csv], {type: "text/csv;charset=utf-8"});
